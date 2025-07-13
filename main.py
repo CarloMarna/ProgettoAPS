@@ -1,0 +1,37 @@
+import subprocess
+import sys
+import os
+
+# Aggiunge la root del progetto al PYTHONPATH
+sys.path.insert(0, os.path.abspath("."))  # ROOT dir: progetto_cred_vc/
+
+def run(title, command):
+    print(f"\n🟢 {title}")
+    print("─" * (len(title) + 3))
+    try:
+        subprocess.run(command, check=True, shell=True)
+    except subprocess.CalledProcessError:
+        print(f"❌ Errore in: {command}")
+        exit(1)
+
+if __name__ == "__main__":
+    os.makedirs("data", exist_ok=True)
+
+    # === 1. Setup: Generazione certificati
+    run("1. Generazione certificati", "python generate_certs.py")
+
+    # === 2. ISSUER → HOLDER
+    run("2.1 Issuer invia challenge", "python -m issuer.send_challenge_to_holder")
+    run("2.2 Holder risponde alla challenge", "python -m holder.answer_challenge")
+    run("2.3 Issuer verifica e genera VC", "python -m issuer.send_vc_to_holder")
+    run("2.4 Holder riceve e valida VC", "python -m holder.receive_and_validate_vc")
+
+    # === 3. VERIFIER → HOLDER
+    run("3.1 Verifier invia challenge", "python -m verifier.send_challenge_to_holder")
+    run("3.2 Holder risponde alla challenge", "python -m holder.answer_verifier_challenge")
+    run("3.3 Holder prepara presentazione", "python -m holder.prepare_presentation")
+
+    # === 4. VERIFIER
+    run("4. Verifier verifica presentazione", "python -m verifier.verify_presentation")
+
+    print("\n✅ Tutto il flusso è stato eseguito con successo.")
