@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # === Step 2: Chiave Diffie-Hellman del verificatore ===
     x_V, y_V = generate_dh_key_pair()
-    with open("verifier_dh_private.txt", "w") as f:
+    with open("verifier/verifier_dh_private.txt", "w") as f:
         f.write(str(x_V))
 
     # === Step 3: Firma H(y_V) con sk_verifier ===

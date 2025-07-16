@@ -23,8 +23,12 @@ if __name__ == "__main__":
     # === 2. ISSUER → HOLDER
     run("2.1 Issuer invia challenge", "python -m issuer.send_challenge_to_holder")
     run("2.2 Holder risponde alla challenge", "python -m holder.answer_challenge")
-    run("2.3 Issuer verifica e genera VC", "python -m issuer.send_vc_to_holder")
-    run("2.4 Holder riceve e valida VC", "python -m holder.receive_and_validate_vc")
+    run("2.3 Issuer verifica risposta e genera chiave DH", "python -m issuer.verify_and_respond")
+    run("2.4 Holder verifica risposta DH e conferma sessione", "python -m holder.confirm_session")
+    run("2.5 Issuer verifica conferma finale e calcola chiave", "python -m issuer.verify_student_confirmation")
+    run("2.6 Issuer genera VC e la cifra con la chiave condivisa", "python -m issuer.send_vc_to_holder")
+    run("2.7 Holder riceve e valida VC", "python -m holder.receive_and_validate_vc")
+
 
     # === 3. VERIFIER → HOLDER
     run("3.1 Verifier invia challenge", "python -m verifier.send_challenge_to_holder")

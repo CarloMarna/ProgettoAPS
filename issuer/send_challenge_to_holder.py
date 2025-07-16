@@ -1,71 +1,89 @@
 import os
 import json
-from datetime import timedelta
-from datetime import datetime, timezone
-from cryptography.hazmat.primitives import serialization
-from cryptography import x509
+from datetime import timedelta, datetime, timezone
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 
-from common.dh_utils import generate_dh_key_pair, sign_dh_public_key, DEFAULT_P, DEFAULT_G
+from common.dh_utils import generate_dh_key_pair, DEFAULT_P, DEFAULT_G
 
+from cryptography.hazmat.primitives.asymmetric import utils
+import hashlib
+
+def sign_challenge_dict(challenge_dict, private_key):
+    """Firma il digest SHA-256 della concatenazione dei campi della challenge."""
+    
+    # Estrai i campi nell'ordine specificato
+    fields = [
+        challenge_dict["nonce"],
+        challenge_dict["issued_at"],
+        challenge_dict["expires_at"],
+        challenge_dict["aud"],
+        challenge_dict["sp"],
+        challenge_dict["ge"]
+    ]
+    
+    # Concatenazione dei valori come stringa
+    concatenated = "".join(fields).encode("utf-8")
+
+    # Calcolo SHA-256 del messaggio
+    digest = hashlib.sha256(concatenated).digest()
+
+    # Firma del digest pre-hashato (Prehashed)
+    signature = private_key.sign(
+        digest,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        utils.Prehashed(hashes.SHA256())
+    )
+    
+    return signature
 
 if __name__ == "__main__":
-    # === Step 1: Generazione parametri della challenge ===
-
-    # Genera un nonce crittograficamente sicuro (256 bit)
+    # === Step 1: Parametri challenge ===
     nonce = os.urandom(32).hex()
-
-    # Timestamp corrente e scadenza della challenge
     issued_at = datetime.now(timezone.utc).isoformat()
-    expires_at = (datetime.utcnow() + timedelta(minutes=2)).isoformat() + "Z"
-
-    # Identità prevista del destinatario (DN dello studente)
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat()
     aud = "CN=Mario Rossi, SerialNumber=123456"
-
-    # Parametri Diffie-Hellman condivisi (primo sicuro e generatore)
-    sp = hex(DEFAULT_P)  # per leggibilità usiamo hex string
+    sp = hex(DEFAULT_P)
     ge = str(DEFAULT_G)
 
-    # === Step 2: Generazione chiave DH dell’università ===
 
-    # x_B: segreto privato, y_B = g^x_B mod p
-    x_B, y_B = generate_dh_key_pair()
-
-    # Salviamo x_B per derivare R in seguito (formato decimale stringa)
-    with open("issuer_dh_private.txt", "w") as f:
-        f.write(str(x_B))
-
-    # === Step 3: Firma della chiave pubblica DH (y_B) ===
-
-    # Carica chiave privata dell’università per firmare y_B
+    # === Step 3: Carica chiave privata issuer ===
     with open("issuer/issuer_private_key.pem", "rb") as f:
         issuer_private_key = serialization.load_pem_private_key(f.read(), password=None)
 
-    # Firma y_B con sk_issuer: Sign(sk_issuer, H(y_B))
-    signature = sign_dh_public_key(y_B, issuer_private_key)
+    # === Step 4: Crea oggetto challenge da firmare ===
+    challenge_dict = {
+        "nonce": nonce,
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+        "aud": aud,
+        "sp": sp,
+        "ge": ge,
+    }
+
+    # === Step 5: Firma della challenge ===
+    signature = sign_challenge_dict(challenge_dict, issuer_private_key)
     signature_hex = signature.hex()
 
-    # Salva la firma (opzionale/debug)
-    with open("issuer/issuer_dh_signature.txt", "w") as f:
-        f.write(signature_hex)
-
-    # === Step 4: Costruzione della challenge firmata ===
-
-    challenge = {
-        "challenge": {
-            "nonce": nonce,
-            "issued_at": issued_at,
-            "expires_at": expires_at,
-            "aud": aud,
-            "sp": sp,
-            "ge": ge,
-            "y_B": str(y_B)  # chiave pubblica DH dell’università
-        },
+    # === Step 6: Costruzione finale e salvataggio ===
+    full_challenge = {
+        "challenge": challenge_dict,
         "signature": signature_hex
     }
 
-    # === Step 5: Salvataggio in challenge.json da inviare allo studente ===
     with open("data/challengeHolder.json", "w") as f:
-        json.dump(challenge, f, indent=2)
-
-    print("✅ Challenge firmata salvata in 'challenge.json'")
-    print("🔐 Chiave segreta DH salvata in 'issuer_dh_private.txt'")
+        json.dump(full_challenge, f, indent=2)
+    
+    print("Challenge creata:")
+    print(f" Nonce:        {nonce}")
+    print(f" Issued at:    {issued_at}")
+    print(f" Expires at:   {expires_at}")
+    print(f" Audience:     {aud}")
+    print(f" DH Param P:   {sp[:20]}...")  
+    print(f" DH Param G:   {ge}")
+    print(f" Signature:    {signature_hex[:40]}...")  
+    print("Challenge firmata salvata in 'challenge.json'")
+    print("Chiave segreta DH salvata in 'issuer_dh_private.txt'")

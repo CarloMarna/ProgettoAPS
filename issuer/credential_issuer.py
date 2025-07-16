@@ -107,8 +107,4 @@ class CredentialIssuer:
             }
         }
 
-        # Ritorna:
-        # - la credenziale firmata VC
-        # - gli attributi serializzati
-        # - l’intero Merkle Tree (per costruire Merkle proof)
         return VC, serialized, tree

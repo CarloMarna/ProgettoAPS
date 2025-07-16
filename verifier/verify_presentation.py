@@ -29,7 +29,7 @@ if __name__ == "__main__":
     sp = int(challenge["original_challenge"]["challenge"]["sp"], 16)
 
     # === Step 2: Carica chiave x_V del verificatore ===
-    with open("verifier_dh_private.txt", "r") as f:
+    with open("verifier/verifier_dh_private.txt", "r") as f:
         x_V = int(f.read())
 
     R = derive_shared_key(y_H, x_V, p=sp)

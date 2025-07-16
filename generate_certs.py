@@ -2,7 +2,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 
@@ -24,8 +24,8 @@ def generate_cert_and_key(subject_dn: str, cert_path: str, key_path: str):
         .issuer_name(name)  # self-signed
         .public_key(private_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=5 * 365))
+        .not_valid_before(datetime.now(tz=timezone.utc))
+        .not_valid_after(datetime.now(tz=timezone.utc) + timedelta(days=5 * 365))
         .sign(private_key, hashes.SHA256())
     )
 
@@ -43,7 +43,10 @@ def generate_cert_and_key(subject_dn: str, cert_path: str, key_path: str):
             )
         )
 
-    print(f"✅ Generati: {cert_path}, {key_path}")
+    print(f" Certificato generato per: {subject_dn['CN']}")
+    print(f"    Chiave privata: {key_path}")
+    print(f"    Certificato:    {cert_path}")
+
 
 
 if __name__ == "__main__":
