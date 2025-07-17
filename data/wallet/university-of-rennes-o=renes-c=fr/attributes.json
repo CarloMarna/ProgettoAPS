@@ -1,0 +1,8 @@
+[
+  "{\"CFU\":9,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF123\",\"data\":\"2024-07-10\",\"docente\":\"Prof. Bianchi\",\"lingua\":\"IT\",\"nome_esame\":\"Basi di Dati\",\"tipo_esame\":\"scritto\",\"voto\":\"29\"}",
+  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF201\",\"data\":\"2024-06-15\",\"docente\":\"Prof. Neri\",\"lingua\":\"IT\",\"nome_esame\":\"Sistemi Operativi\",\"tipo_esame\":\"orale\",\"voto\":\"30\"}",
+  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF250\",\"data\":\"2024-05-30\",\"docente\":\"Prof. Marrone\",\"lingua\":\"IT\",\"nome_esame\":\"Ingegneria del Software\",\"tipo_esame\":\"progetto\",\"voto\":\"27\"}",
+  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF305\",\"data\":\"2024-05-22\",\"docente\":\"Prof. Verdi\",\"lingua\":\"IT\",\"nome_esame\":\"Reti di Calcolatori\",\"tipo_esame\":\"misto\",\"voto\":\"28\"}",
+  "{\"CFU\":3,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"LAN402\",\"data\":\"2024-04-30\",\"docente\":\"Dr. Smith\",\"lingua\":\"EN\",\"nome_esame\":\"Inglese B2\",\"tipo_esame\":\"scritto\",\"voto\":\"30L\"}",
+  "{\"CFU\":9,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF410\",\"data\":\"2024-03-18\",\"docente\":\"Prof. Blu\",\"lingua\":\"IT\",\"nome_esame\":\"Intelligenza Artificiale\",\"tipo_esame\":\"orale\",\"voto\":\"30\"}"
+]

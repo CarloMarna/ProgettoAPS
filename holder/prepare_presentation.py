@@ -1,95 +1,128 @@
 import json
-from datetime import datetime, timedelta
+import os
+from datetime import datetime, timedelta, timezone
 from cryptography import x509
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.fernet import Fernet
-from common.exercise_3 import sha256
-from common.dh_utils import derive_shared_key
+
+from common.crypto_utils import sha256_digest, verify_signature
+from holder.credential_holder import CredentialHolder
+##RICORDA DI AGGIUNGERE AUD DELL'Universita
+
+
+def list_certifications(base_path="data/wallet"):
+    return [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
+
+def load_vc_package(cert_path):
+    with open(os.path.join(cert_path, "valid_vc.json")) as f:
+        vc = json.load(f)
+    with open(os.path.join(cert_path, "attributes.json")) as f:
+        attributes = json.load(f)
+    with open(os.path.join(cert_path, "proofs.json")) as f:
+        proofs = json.load(f)
+    with open(os.path.join(cert_path, "vc_hmac.bin"), "rb") as f:
+        vc_hmac = f.read()
+    return vc, attributes, proofs, vc_hmac
 
 if __name__ == "__main__":
-    # === Step 1: Carica dati base ===
-    with open("../data/session_key.shared", "rb") as f:
-        session_key = f.read()
-    fernet = Fernet(session_key)
+    # === Step 1: Carica e decifra la challenge ===
+    with open("data/challenge_verifier_holder/key/session_key_holder.shared", "rb") as f:
+        session_key_holder = f.read()
+    fernet = Fernet(session_key_holder)
 
-    decrypted = fernet.decrypt(open("../data/vc_payload.enc", "rb").read())
-    vc_package = json.loads(decrypted)
-    VC = vc_package["VC"]
-    attributes = vc_package["attributes"]
-    proofs = vc_package["proofs"]
+    with open("data/challenge_verifier_holder/encrypted_challenge.json", "rb") as f:
+        encrypted_challenge = f.read()
 
-    # === Step 2: Seleziona attributo da presentare ===
-    index_to_present = 0  # esempio: presentiamo il primo esame
-    m_i = json.loads(attributes[index_to_present])
-    π_i = proofs[index_to_present]
-    h_i = sha256(attributes[index_to_present])
+    decrypted = fernet.decrypt(encrypted_challenge)
+    challenge_obj = json.loads(decrypted)
+    challenge = challenge_obj["challenge"]
+    signature_verifier = bytes.fromhex(challenge_obj["signature_verifier"])
 
-    # === Step 3: Carica chiave privata dello studente ===
-    with open("cert/holder_private_key.pem", "rb") as f:
-        sk_holder = serialization.load_pem_private_key(f.read(), password=None)
-
-    with open("cert/holder_cert.pem", "rb") as f:
-        cert_holder = f.read()
-        cert_obj = x509.load_pem_x509_certificate(cert_holder)
-        holder_dn = cert_obj.subject.rfc4514_string()
-
-    # === Step 4: Crea struttura P_prot senza firma_holder ===
-    nonce = os.urandom(16).hex()
-    timestamp = datetime.utcnow().isoformat() + "Z"
-    expiration = (datetime.utcnow() + timedelta(minutes=3)).isoformat() + "Z"
-
-    P_prot_base = {
-        "ID_C": VC["ID_C"],
-        "issuer": VC["issuer"],
-        "holder": holder_dn,
-        "expirationDate": VC["expirationDate"],
-        "schema": VC["schema"],
-        "m_i": m_i,
-        "π_i": π_i,
-        "MerkleRoot": VC["merkle"]["root"],
-        "signature": VC["signature"],
-        "revocation": VC["revocation"],
-        "nonce": nonce,
-        "timestamp": timestamp,
-        "expiration": expiration,
-        "cert_holder": cert_holder.decode()
-    }
-
-    # === Step 5: Firma P_prot_base ===
-    to_sign = json.dumps(P_prot_base, separators=(",", ":"), sort_keys=True).encode()
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(to_sign)
-    digest_final = digest.finalize()
-
-    sig_holder = sk_holder.sign(
-        digest_final,
-        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-        hashes.SHA256()
+    # === Step 2: Verifica firma del verificatore ===
+    digest = sha256_digest(
+        challenge,                        
+        challenge_obj["nonce"],
+        challenge_obj["issued_at"],
+        challenge_obj["expires_at"],
+        challenge_obj["aud"]
     )
 
-    # === Step 6: Aggiungi firma_holder e completa P_prot ===
-    P_prot_base["signature_holder"] = sig_holder.hex()
 
-    # === Step 7: Deriva R = y_V^x_H mod p ===
-    with open("holder/holder_dh_private_v2.txt", "r") as f:
-        x_H = int(f.read())
+    with open("verifier/cert/verifier_cert.pem", "rb") as f:
+        verifier_cert = x509.load_pem_x509_certificate(f.read())
+        pk_verifier = verifier_cert.public_key()
+        audNew = verifier_cert.subject.rfc4514_string()
 
-    y_V = int(VC["signature"]["signedData"].split("∥")[0], 16)  # NON disponibile: usare challenge originale
-    with open("challenge_response_verifier.json", "r") as f:
-        challenge_obj = json.load(f)
-        y_V = int(challenge_obj["original_challenge"]["challenge"]["y_V"])
-        sp = int(challenge_obj["original_challenge"]["challenge"]["sp"], 16)
+    print("Verifca challenge ricevuta")
+    if not verify_signature(digest, signature_verifier, pk_verifier):
+        print(" Firma del verificatore NON valida.")
+        exit(1)
 
-    R = derive_shared_key(y_V, x_H, p=sp)
+    # === Step 3: Verifica validità temporale ===
+    now = datetime.now(timezone.utc)
+    issued_at = datetime.fromisoformat(challenge_obj["issued_at"])
+    expires_at = datetime.fromisoformat(challenge_obj["expires_at"])
+
+    if not (issued_at <= now <= expires_at):
+        print(" Challenge scaduta o non ancora valida.")
+        exit(1)
+    print(" Challenge valida e firmata correttamente.")
+
+    # === Step 4: Carica VC, attributi e proof ===
+    certs = list_certifications()
+
+    if not certs:
+        print("Nessuna certificazione trovata.")
+        exit(1)
+
+    print("\nSeleziona la certificazione da presentare:")
+    for i, cert in enumerate(certs):
+        print(f" {i + 1}. {cert}")
+
+    while True:
+        try:
+            choice = int(input("Inserisci il numero: ")) - 1
+            if 0 <= choice < len(certs):
+                selected_cert = certs[choice]
+                break
+            else:
+                print(f"Inserisci un numero tra 1 e {len(certs)}.")
+        except ValueError:
+            print("Inserisci un numero valido.")
+    cert_path = os.path.join("data/wallet", selected_cert)
+
+    VC, attributes, proofs, vc_hmac = load_vc_package(cert_path)
+
+    # === Step 5: Prepara P_prot ===
+    holder = CredentialHolder("holder/cert/holder_private_key.pem", "holder/cert/holder_cert.pem")
+    nonce = challenge_obj["nonce"]
+    issued_at = challenge_obj["issued_at"]
+    expires_at = challenge_obj["expires_at"]
+
+    P_prot = holder.prepare_presentation(
+        vc=VC,
+        vc_hmac=vc_hmac,
+        attributes=attributes,
+        proofs=proofs,
+        nonce=nonce,
+        issued_at=issued_at,
+        expires_at=expires_at,
+        aud=audNew
+    )
+    if P_prot is None:
+        print("Preparazione della presentazione fallita.")
+        exit(1)
+        
+    # === Step 6: Cifra P_prot con R ===
+    R = session_key_holder
     fernet_session = Fernet(R)
 
-    # === Step 8: Cifra P_prot ===
-    P_prot_bytes = json.dumps(P_prot_base, separators=(",", ":"), sort_keys=True).encode()
+    P_prot_bytes = json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode()
     encrypted_presentation = fernet_session.encrypt(P_prot_bytes)
 
-    with open("../data/P_prot_ciphered.enc", "wb") as f:
+    with open("data/challenge_verifier_holder/P_prot_ciphered.enc", "wb") as f:
         f.write(encrypted_presentation)
 
-    print("📦 Presentazione cifrata salvata in 'data/P_prot_ciphered.enc'")
-    print("🔐 R derivata e usata da DH y_V^x_H")
+    print("Presentazione cifrata salvata in 'data/challenge_verifier_holder/P_prot_ciphered.enc'")
+  

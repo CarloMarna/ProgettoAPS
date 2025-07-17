@@ -67,7 +67,7 @@ if __name__ == "__main__":
     )
 
     # === Step 7: Salvataggio del pacchetto cifrato ===
-    with open("data/vc_payload.enc", "wb") as f:
+    with open("data/challenge_issuer_holder/vc_payload.enc", "wb") as f:
         f.write(encrypted_payload)
 
     print("Pacchetto VC cifrato salvato in 'data/vc_payload.enc'")

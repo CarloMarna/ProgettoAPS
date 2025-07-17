@@ -33,6 +33,9 @@ if __name__ == "__main__":
     run("3.1 Verifier invia challenge", "python -m common.create_challenge verifier")
     run("3.2 Holder risponde alla challenge", "python -m holder.respond_to_challenge verifier")
     run("3.3 Verifier verifica risposta e calcola chiave DH", "python -m common.process_student_response verifier")
+    run("3.4 Holder verifica risposta ", "python -m holder.process_dh_response")
+    run("3.5 Verifier invia challenge selettiva", "python -m verifier.generate_selective_challenge")
+    run("3.6 Holder prepara presentazione selettiva", "python -m holder.prepare_presentation")
     '''run("3.3 Holder prepara presentazione", "python -m holder.prepare_presentation")
 
     # === 4. VERIFIER

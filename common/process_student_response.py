@@ -142,6 +142,17 @@ def process_response(role):
     print(f"  Firma:      {response_obj['signature'][:40]}...")
     print(f"Salvato in {dh_response_path}")
 
+    if role == "verifier":
+        # === Step 8: Calcola e salva chiave di sessione condivisa (K_session) ===
+        session_key = derive_shared_key(y_a, x_b, p)
+
+        session_key_path = f"data/challenge_verifier_holder/key/session_key_{role}.shared"
+        with open(session_key_path, "wb") as f:
+            f.write(session_key)
+
+        print(f"\nChiave di sessione DH e salvata in '{session_key_path}'")
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()

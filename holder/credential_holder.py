@@ -5,7 +5,7 @@ from cryptography import x509
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, hmac, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from common.exercise_3 import sha256
+from common.exercise_3 import sha256, verify_merkle_proof
 
 
 class CredentialHolder:
@@ -19,13 +19,26 @@ class CredentialHolder:
             self.cert_holder = x509.load_pem_x509_certificate(f.read())
 
         # Chiave HMAC generata localmente per il wallet
-        self.k_wallet = os.urandom(32)
-
+        k_wallet_path = "data/wallet/k_wallet.bin"
+        if os.path.exists(k_wallet_path):
+            with open(k_wallet_path, "rb") as f:
+                self.k_wallet = f.read()
+        else:
+            self.k_wallet = os.urandom(32)
+            os.makedirs(os.path.dirname(k_wallet_path), exist_ok=True)
+            with open(k_wallet_path, "wb") as f:
+                f.write(self.k_wallet)
+                
     def verify_credential(self, payload: dict) -> bool:
         """Esegue tutti i controlli sulla VC ricevuta"""
         VC = payload["VC"]
         attributes = payload["attributes"]
         proofs = payload["proofs"]
+
+        issuer_dn = VC["issuer"]
+        issuer_id = issuer_dn.lower().replace("cn=", "").replace(",", "").replace(" ", "-")
+        wallet_path = os.path.join("data/wallet", issuer_id)
+        os.makedirs(wallet_path, exist_ok=True)
 
         # Step 1: verifica firma dell’università
         if not self.verify_signature(VC):
@@ -46,22 +59,28 @@ class CredentialHolder:
         merkle_root = VC["merkle"]["root"]
         for i, (attr_json, proof) in enumerate(zip(attributes, proofs)):
             h_i = sha256(attr_json)
-            if not self.verify_merkle_proof(h_i, proof, merkle_root, i):
+            if not verify_merkle_proof(h_i, proof, merkle_root, i):
                 print(f" π_{i} NON valida per attributo {i}")
                 return False
             print(f" π_{i} valida per attributo {i}")
 
         # Step 4: salva HMAC locale nel wallet
         hmac_value = self.compute_local_hmac(VC)
-        with open("data/wallet/vc_hmac.bin", "wb") as f:
-            f.write(hmac_value)
-        print("\nHMAC locale salvato in 'data/wallet/vc_hmac.bin'")
-
-        with open("data/wallet/valid_vc.json", "w") as f:
+    
+        with open(os.path.join(wallet_path, "valid_vc.json"), "w") as f:
             json.dump(VC, f, indent=2)
-        print("VC salvata nel wallet: data/wallet/valid_vc.json")
 
+        with open(os.path.join(wallet_path, "attributes.json"), "w") as f:
+            json.dump(attributes, f, indent=2)
 
+        with open(os.path.join(wallet_path, "proofs.json"), "w") as f:
+            json.dump(proofs, f, indent=2)
+
+        with open(os.path.join(wallet_path, "vc_hmac.bin"), "wb") as f:
+            f.write(hmac_value)
+
+    
+        print("\nTutte le informazioni sono state salvate nel wallet.")
         return True
 
     def verify_signature(self, vc: dict) -> bool:
@@ -106,59 +125,66 @@ class CredentialHolder:
         except Exception:
             return False
 
-    def prepare_presentation(self, vc: dict, attr_json: str, merkle_tree: List[List[str]], leaf_index: int, nonce: str, timestamp: str, expiration: str) -> dict:
-        """Prepara presentazione selettiva protetta P_prot"""
-        attr_dict = json.loads(attr_json)
-        h_i = sha256(attr_json)
+    def prepare_presentation(self, vc: dict, vc_hmac: bytes, attributes: List[str], proofs: List[List[str]], nonce: str, issued_at: str, expires_at: str, aud: str) -> dict:
+        while True:
+            print("\nEsami disponibili:")
+            for i, attr in enumerate(attributes):
+                esame = json.loads(attr)["nome_esame"]
+                print(f" [{i}] {esame}")
 
-        # Ricava π_i = lista degli hash fratelli
-        proof = []
-        index = leaf_index
-        for level in merkle_tree[:-1]:
-            if index % 2 == 0:
-                sibling_index = index + 1 if index + 1 < len(level) else index
+            scelti = input("Inserisci gli indici separati da virgola degli esami da presentare: ")
+            try:
+                indici = [int(x.strip()) for x in scelti.split(",")]
+                if any(i < 0 or i >= len(attributes) for i in indici):
+                    print(" Alcuni indici sono fuori dal range. Riprova.\n")
+                    continue
+            except ValueError:
+                print(" Input non valido. Usa solo numeri separati da virgole.\n")
+                continue
+
+            m_i = [json.loads(attributes[i]) for i in indici]
+            π_i = [proofs[i] for i in indici]
+
+            print("\nHai selezionato i seguenti esami:")
+            for m in m_i:
+                print(f" - {m['nome_esame']} ({m['cod_corso']}, voto: {m['voto']})")
+
+            conferma = input("Vuoi procedere con la creazione del certificato? (s/n): ").lower()
+            if conferma == "s":
+                break
             else:
-                sibling_index = index - 1
-            proof.append(level[sibling_index])
-            index //= 2
+                print("Ripeti la selezione degli esami.\n")
 
-        # Firma del pacchetto P_prot senza la firma_holder
-        P_prot_unsigned = {
-            "ID_C": vc["ID_C"],
-            "issuer": vc["issuer"],
-            "holder": vc["holder"],
-            "expirationDate": vc["expirationDate"],
-            "schema": vc["schema"],
-            "m_i": attr_dict,
-            "π_i": proof,
-            "MerkleRoot": vc["merkle"]["root"],
-            "signature": vc["signature"],
-            "revocation": vc["revocation"],
+        if self.verify_local_integrity(vc, vc_hmac):
+            print("Integrità della VC verificata con successo.")
+        else:
+            print("Integrità della VC compromessa. Non è possibile procedere.")
+            return None
+        # Costruzione presentazione
+        P_prot = {
+            "Credenziale": vc,
+            "m_i": m_i,
+            "π_i": π_i,
             "nonce": nonce,
-            "timestamp": timestamp,
-            "expiration": expiration,
-            "cert_holder": self.cert_holder.public_bytes(serialization.Encoding.PEM).decode()
+            "issued_at": issued_at,
+            "expires_at": expires_at,
+            "aud": aud,
         }
 
         digest = hashes.Hash(hashes.SHA256())
-        digest.update(json.dumps(P_prot_unsigned, separators=(",", ":"), sort_keys=True).encode())
-        digest_final = digest.finalize()
+        digest.update(json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode())
+        final_digest = digest.finalize()
 
-        signature_holder = self.private_key.sign(
-            digest_final,
+        signature = self.private_key.sign(
+            final_digest,
             padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
             hashes.SHA256()
         )
 
-        P_prot_unsigned["signature_holder"] = signature_holder.hex()
-        return P_prot_unsigned
+        P_prot["signature_holder"] = signature.hex()
+        return P_prot
 
-    def encrypt_presentation(self, P_prot: dict, session_key: bytes) -> bytes:
-        """Cifra simmetricamente P_prot con chiave di sessione R"""
-        f = Fernet(session_key)
-        serialized = json.dumps(P_prot, separators=(",", ":"), sort_keys=True)
-        return f.encrypt(serialized.encode())
-
+#QUESTI NON DEVONO STARE QUI
     @staticmethod
     def load_default_schema() -> dict:
         """Restituisce lo schema JSON ufficiale degli attributi accademici"""
@@ -203,18 +229,6 @@ class CredentialHolder:
             },
             "additionalProperties": False
         }
-
-    @staticmethod
-    def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
-        """Verifica che h_i + π_i risalga alla Merkle Root"""
-        current_hash = h_i
-        for sibling in proof:
-            if index % 2 == 0:
-                current_hash = sha256(current_hash + sibling)
-            else:
-                current_hash = sha256(sibling + current_hash)
-            index //= 2
-        return current_hash == root
 
     @staticmethod
     def validate_schema(attributes: List[str], json_schema: dict) -> None:

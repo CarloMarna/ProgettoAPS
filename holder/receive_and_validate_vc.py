@@ -21,7 +21,7 @@ if __name__ == "__main__":
     try:
         # === Step 1: Caricamento e decifratura ===
         payload = load_encrypted_payload(
-            path_enc="data/vc_payload.enc",
+            path_enc="data/challenge_issuer_holder/vc_payload.enc",
             path_key="data/challenge_issuer_holder/key/session_key.shared"
         )
 

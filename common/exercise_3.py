@@ -1,6 +1,6 @@
 import hashlib
 from cryptography.fernet import Fernet
-
+from typing import List
 
 def sha256(data):
     return hashlib.sha256(data.encode('utf-8')).hexdigest()
@@ -78,6 +78,17 @@ def verify_data(decrypted_data, leaf_index, merkle_root, leaves, tree):
 
     # the verification holds iff the root matches with the computed hash
     return current_hash == merkle_root
+
+def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
+        """Verifica che h_i + π_i risalga alla Merkle Root"""
+        current_hash = h_i
+        for sibling in proof:
+            if index % 2 == 0:
+                current_hash = sha256(current_hash + sibling)
+            else:
+                current_hash = sha256(sibling + current_hash)
+            index //= 2
+        return current_hash == root
 
 def compute_merkle_proofs(leaves, tree):
     """Costruisce la lista completa di Merkle proof π_i per ogni attributo"""

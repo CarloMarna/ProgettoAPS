@@ -1,0 +1,10 @@
+{
+    "CN=Mario Rossi, SerialNumber=123456": [
+        "INF123",
+        "INF201"
+    ],
+    "CN=Laura Bianchi, SerialNumber=789012": [
+        "INF305",
+        "LAN402"
+    ]
+}
