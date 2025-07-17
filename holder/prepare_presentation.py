@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.fernet import Fernet
 from common.exercise_3 import sha256
-from common.dh_utils import derive_shared_key, sign_dh_public_key
+from common.dh_utils import derive_shared_key
 
 if __name__ == "__main__":
     # === Step 1: Carica dati base ===
@@ -26,10 +26,10 @@ if __name__ == "__main__":
     h_i = sha256(attributes[index_to_present])
 
     # === Step 3: Carica chiave privata dello studente ===
-    with open("holder_private_key.pem", "rb") as f:
+    with open("cert/holder_private_key.pem", "rb") as f:
         sk_holder = serialization.load_pem_private_key(f.read(), password=None)
 
-    with open("holder_cert.pem", "rb") as f:
+    with open("cert/holder_cert.pem", "rb") as f:
         cert_holder = f.read()
         cert_obj = x509.load_pem_x509_certificate(cert_holder)
         holder_dn = cert_obj.subject.rfc4514_string()
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     P_prot_base["signature_holder"] = sig_holder.hex()
 
     # === Step 7: Deriva R = y_V^x_H mod p ===
-    with open("holder_dh_private_v2.txt", "r") as f:
+    with open("holder/holder_dh_private_v2.txt", "r") as f:
         x_H = int(f.read())
 
     y_V = int(VC["signature"]["signedData"].split("∥")[0], 16)  # NON disponibile: usare challenge originale

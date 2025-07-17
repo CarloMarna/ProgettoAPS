@@ -57,20 +57,20 @@ if __name__ == "__main__":
     # Issuer (università)
     generate_cert_and_key(
         subject_dn={"CN": "University of Rennes", "O": "RENES", "C": "FR"},
-        cert_path="issuer/issuer_cert.pem",
-        key_path="issuer/issuer_private_key.pem"
+        cert_path="issuer/cert/issuer_cert.pem",
+        key_path="issuer/cert/issuer_private_key.pem"
     )
 
     # Holder (studente)
     generate_cert_and_key(
         subject_dn={"CN": "Mario Rossi", "O": "University of Salerno", "C": "IT"},
-        cert_path="holder/holder_cert.pem",
-        key_path="holder/holder_private_key.pem"
+        cert_path="holder/cert/holder_cert.pem",
+        key_path="holder/cert/holder_private_key.pem"
     )
 
     # Verifier (azienda, ente, ecc.)
     generate_cert_and_key(
         subject_dn={"CN": "Verifier Inc", "O": "VerifierOrg", "C": "EU"},
-        cert_path="verifier/verifier_cert.pem",
-        key_path="verifier/verifier_private_key.pem"
+        cert_path="verifier/cert/verifier_cert.pem",
+        key_path="verifier/cert/verifier_private_key.pem"
     )

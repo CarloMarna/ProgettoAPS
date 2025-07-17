@@ -1,51 +1,75 @@
 import json
-import base64
 import os
-import hmac as hmac_builtin
 from typing import List, Tuple
+from cryptography import x509
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, hmac, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography import x509
-from common.exercise_3 import sha256, verify_data
+from common.exercise_3 import sha256
 
 
 class CredentialHolder:
     def __init__(self, private_key_path: str, cert_path: str):
-        # Carica chiave privata holder (sk_holder)
+        # Carica chiave privata holder
         with open(private_key_path, "rb") as f:
             self.private_key = serialization.load_pem_private_key(f.read(), password=None)
 
-        # Carica certificato holder (usato per presentazione)
+        # Carica certificato holder (per eventuali presentazioni selettive)
         with open(cert_path, "rb") as f:
             self.cert_holder = x509.load_pem_x509_certificate(f.read())
 
-        # HMAC key memorizzata localmente e protetta (es. Secure Enclave)
+        # Chiave HMAC generata localmente per il wallet
         self.k_wallet = os.urandom(32)
 
-    def decrypt_payload(self, encrypted_payload: bytes, session_key: bytes) -> Tuple[dict, List[str], List[List[str]]]:
-        """Decifra VC + attributi + proof con chiave R"""
-        f = Fernet(session_key)
-        decrypted = f.decrypt(encrypted_payload).decode()
-        obj = json.loads(decrypted)
-        return obj["VC"], obj["attributes"], obj["merkle_tree"]
+    def verify_credential(self, payload: dict) -> bool:
+        """Esegue tutti i controlli sulla VC ricevuta"""
+        VC = payload["VC"]
+        attributes = payload["attributes"]
+        proofs = payload["proofs"]
 
-    def validate_schema(self, attributes: List[str], json_schema: dict) -> bool:
-        """Controlla che gli attributi siano conformi allo schema JSON"""
-        import jsonschema
-        for attr_json in attributes:
-            data = json.loads(attr_json)
-            jsonschema.validate(instance=data, schema=json_schema)
+        # Step 1: verifica firma dell’università
+        if not self.verify_signature(VC):
+            print(" Firma dell’università non valida.")
+            return False
+        print(" Firma dell’università valida.")
+
+        # Step 2: validazione schema JSON
+        try:
+            schema = self.load_default_schema()
+            self.validate_schema(attributes, schema)
+        except Exception as e:
+            print(f" Errore nella validazione schema: {e}")
+            return False
+        print(" Tutti gli attributi sono conformi allo schema.")
+
+        # Step 3: verifica Merkle proof per ogni attributo
+        merkle_root = VC["merkle"]["root"]
+        for i, (attr_json, proof) in enumerate(zip(attributes, proofs)):
+            h_i = sha256(attr_json)
+            if not self.verify_merkle_proof(h_i, proof, merkle_root, i):
+                print(f" π_{i} NON valida per attributo {i}")
+                return False
+            print(f" π_{i} valida per attributo {i}")
+
+        # Step 4: salva HMAC locale nel wallet
+        hmac_value = self.compute_local_hmac(VC)
+        with open("data/wallet/vc_hmac.bin", "wb") as f:
+            f.write(hmac_value)
+        print("\nHMAC locale salvato in 'data/wallet/vc_hmac.bin'")
+
+        with open("data/wallet/valid_vc.json", "w") as f:
+            json.dump(VC, f, indent=2)
+        print("VC salvata nel wallet: data/wallet/valid_vc.json")
+
+
         return True
 
     def verify_signature(self, vc: dict) -> bool:
-        """Verifica la firma hash-then-sign dell'università"""
-        verification_method = vc["signature"]["verificationMethod"]
+        """Verifica la firma hash-then-sign dell’università"""
         signed_data = vc["signature"]["signedData"]
         signature = bytes.fromhex(vc["signature"]["signatureValue"])
 
-        # Scarica o carica localmente il certificato issuer
-        with open("issuer/issuer_cert.pem", "rb") as f:
+        with open("issuer/cert/issuer_cert.pem", "rb") as f:
             cert = x509.load_pem_x509_certificate(f.read())
             pk_issuer = cert.public_key()
 
@@ -134,3 +158,68 @@ class CredentialHolder:
         f = Fernet(session_key)
         serialized = json.dumps(P_prot, separators=(",", ":"), sort_keys=True)
         return f.encrypt(serialized.encode())
+
+    @staticmethod
+    def load_default_schema() -> dict:
+        """Restituisce lo schema JSON ufficiale degli attributi accademici"""
+        return {
+            "type": "object",
+            "required": [
+                "nome_esame", "cod_corso", "CFU", "voto", "data",
+                "anno_accademico", "tipo_esame", "docente", "lingua"
+            ],
+            "properties": {
+                "nome_esame": {"type": "string"},
+                "cod_corso": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_\\-]{2,10}$"
+                },
+                "CFU": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                },
+                "voto": {
+                    "type": "string",
+                    "pattern": "^(18|19|2[0-9]|30|30L)$"
+                },
+                "data": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "anno_accademico": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}/[0-9]{4}$"
+                },
+                "docente": {"type": "string"},
+                "lingua": {
+                    "type": "string",
+                    "enum": ["IT", "EN", "FR", "DE", "ES"]
+                },
+                "tipo_esame": {
+                    "type": "string",
+                    "enum": ["scritto", "orale", "progetto", "misto"]
+                }
+            },
+            "additionalProperties": False
+        }
+
+    @staticmethod
+    def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
+        """Verifica che h_i + π_i risalga alla Merkle Root"""
+        current_hash = h_i
+        for sibling in proof:
+            if index % 2 == 0:
+                current_hash = sha256(current_hash + sibling)
+            else:
+                current_hash = sha256(sibling + current_hash)
+            index //= 2
+        return current_hash == root
+
+    @staticmethod
+    def validate_schema(attributes: List[str], json_schema: dict) -> None:
+        """Verifica conformità di ciascun attributo allo schema JSON"""
+        import jsonschema
+        for i, attr_json in enumerate(attributes):
+            data = json.loads(attr_json)
+            jsonschema.validate(instance=data, schema=json_schema)

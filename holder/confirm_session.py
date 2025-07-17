@@ -8,8 +8,8 @@ from cryptography.hazmat.primitives.asymmetric import padding, utils
 from common.dh_utils import derive_shared_key
 from common.crypto_utils import sha256_digest, verify_signature
 
-# === Step 1: Carica la risposta del server (y_B) ===
-with open("data/server_dh_response.json", "r") as f:
+# === Step 0: Carica la risposta del server (y_B) ===
+with open("data/challenge_issuer_holder/server_dh_response.json", "r") as f:
     server_msg = json.load(f)
 
 server_response = server_msg["server_response"]
@@ -21,41 +21,41 @@ expires_at = server_response["expires_at"]
 aud = server_response["aud"]
 y_b = int(server_response["y_b"])
 
-print("Server DH Response ricevuta:")
-print(f"  Nonce:       {nonce}")
-print(f"  Issued at:   {issued_at}")
-print(f"  Expires at:  {expires_at}")
-print(f"  Audience:    {aud}")
-print(f"  y_B:         {str(y_b)[:40]}...")
-print(f"  Firma ricevuta: {signature_server.hex()[:40]}...")
+
+# === Step 1: Verifica validità temporale ===
+print("Verifica challenge ricevuta")
+now = datetime.now(timezone.utc)
+if not (datetime.fromisoformat( server_response["issued_at"]) <= now <= datetime.fromisoformat(server_response["expires_at"])):
+    print(" Messaggio scaduto o non ancora valido.")
+    exit(1)
+print(" Finestra temporale valida.")
 
 # === Step 2: Verifica firma del server ===
 digest = sha256_digest(nonce, issued_at, expires_at, aud, str(y_b))
 
-with open("issuer/issuer_cert.pem", "rb") as f:
+with open("issuer/cert/issuer_cert.pem", "rb") as f:
     issuer_cert = x509.load_pem_x509_certificate(f.read())
     pk_issuer = issuer_cert.public_key()
     issuer_subject = issuer_cert.subject.rfc4514_string()
 newAud = issuer_subject
 
-
 if verify_signature(digest, signature_server, pk_issuer):
-    print("Firma del server verificata correttamente.")
+    print(" Firma valida.")
 else:
-    print("Firma del server NON valida.")
+    print(" Firma  NON valida.")
     exit(1)
 
 # === Step 3: Calcola chiave di sessione K_session = y_B ^ x_A mod p ===
-with open("holder/holder_dh_private.txt", "r") as f:
+with open("data/holder/holder_dh_private.txt", "r") as f:
     x_a = int(f.read())
 
-with open("data/challengeHolder.json", "r") as f:
+with open("data/challenge_issuer_holder/challengeHolder.json", "r") as f:
     challenge = json.load(f)["challenge"]
 
 p = int(challenge["sp"], 16)
 shared_key = derive_shared_key(y_b, x_a, p)
 
-with open("data/session_key.shared", "wb") as f:
+with open("data/challenge_issuer_holder/key/session_key.shared", "wb") as f:
     f.write(shared_key)
 
 print("\nChiave di sessione condivisa calcolata e salvata.")
@@ -81,7 +81,7 @@ digest_confirmation = sha256_digest(
     "session_established"
 )
 
-with open("holder/holder_private_key.pem", "rb") as f:
+with open("holder/cert/holder_private_key.pem", "rb") as f:
     sk_holder = serialization.load_pem_private_key(f.read(), password=None)
 
 signature_confirmation = sk_holder.sign(
@@ -99,7 +99,7 @@ final_confirmation = {
     "signature": signature_confirmation.hex()
 }
 
-with open("data/student_session_confirm.json", "w") as f:
+with open("data/challenge_issuer_holder/student_session_confirm.json", "w") as f:
     json.dump(final_confirmation, f, indent=2)
 
 print("\nConferma inviata all’università:")
@@ -108,4 +108,4 @@ print(f"  Issued_at:   {issued_at_c}")
 print(f"  Expires_at:  {expires_at_c}")
 print(f"  Audience:    {confirmation_aud}")
 print(f"  Firma:       {final_confirmation['signature'][:40]}...")
-print("Messaggio salvato in 'data/student_session_confirm.json'")
+print("Messaggio salvato in 'data/challenge_issuer_holder/student_session_confirm.json'")

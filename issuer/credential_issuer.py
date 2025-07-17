@@ -7,8 +7,8 @@ from cryptography import x509  # per gestire certificati
 from cryptography.hazmat.primitives import hashes, serialization  # per hash e chiavi
 from cryptography.hazmat.primitives.asymmetric import padding  # per padding RSA PSS
 
-from common.exercise_3 import build_merkle_tree, sha256  # Merkle Tree dal codice del professore
-
+from common.exercise_3 import build_merkle_tree
+from ocsp.registry import OCSPRegistry
 
 class CredentialIssuer:
     def __init__(self,
@@ -22,6 +22,7 @@ class CredentialIssuer:
         self.schema_url = schema_url                        # URL dello schema JSON ufficiale
         self.revocation_registry = revocation_registry      # Endpoint OCSP per verifica revoca
         self.expiration_date = "2028-03-15T10:30:00Z"       # Scadenza della credenziale
+        self.ocsp = OCSPRegistry()
 
         # Carica il certificato dell’università per estrarre l'URL di verifica
         with open(cert_path, "rb") as f:
@@ -106,5 +107,5 @@ class CredentialIssuer:
                 "registry": self.revocation_registry
             }
         }
-
+        self.ocsp.register(revocation_id)
         return VC, serialized, tree

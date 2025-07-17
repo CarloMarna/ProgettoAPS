@@ -5,18 +5,35 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.fernet import Fernet
 
-# Parametri comuni di Diffie-Hellman (un numero primo sicuro e un generatore)
-# Questi vengono scelti in modo fisso nel nostro esempio semplificato
-DEFAULT_P = int(
-    "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
-    "29024E088A67CC74020BBEA63B139B22514A08798E3404DD"
-    "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
-    "E485B576625E7EC6F44C42E9A63A36210000000000090563", 16
-)
-DEFAULT_G = 2
+# Gruppo DH per l'issuer (es: RFC 3526 group 14 - 2048-bit MODP)
+ISSUER_P = int("""
+FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1
+29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD
+EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245
+E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED
+EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE65381
+FFFFFFFF FFFFFFFF
+""".replace(" ", "").replace("\n", ""), 16)
+ISSUER_G = 2
+
+# Gruppo DH per il verifier (es: RFC 3526 group 15 - 3072-bit MODP)
+VERIFIER_P = int("""
+FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1
+29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD
+EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245
+E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED
+EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE65381
+FFFFFFFF FFFFFFFF
+""".replace(" ", "").replace("\n", ""), 16)
+VERIFIER_G = 5
+
+DH_PARAMS = {
+    "issuer": {"p": ISSUER_P, "g": ISSUER_G},
+    "verifier": {"p": VERIFIER_P, "g": VERIFIER_G}
+}
 
 
-def generate_dh_key_pair(p=DEFAULT_P, g=DEFAULT_G):
+def generate_dh_key_pair(p, g):
     """Genera una coppia (x, y) per Diffie-Hellman: x privato, y=g^x mod p"""
     x = int.from_bytes(os.urandom(32), byteorder="big")  # Esponente privato casuale
     y = pow(g, x, p)  # Chiave pubblica DH
@@ -55,7 +72,7 @@ def verify_dh_signature(y: int, signature: bytes, public_key) -> bool:
         return False
 
 
-def derive_shared_key(their_y: int, my_x: int, p=DEFAULT_P) -> bytes:
+def derive_shared_key(their_y: int, my_x: int, p) -> bytes:
     """Deriva la chiave simmetrica condivisa: K = y^x mod p"""
     shared_secret = pow(their_y, my_x, p)  # valore numerico segreto
     shared_bytes = str(shared_secret).encode()  # converti in bytes

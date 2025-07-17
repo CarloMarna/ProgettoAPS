@@ -5,7 +5,6 @@ from cryptography.fernet import Fernet
 def sha256(data):
     return hashlib.sha256(data.encode('utf-8')).hexdigest()
 
-
 def build_merkle_tree(data_list):
     # the tree is represented by a list of lists;
     # the i-th list contains the (k-i+1)-th level of the tree (from leaves to root, where k is the height of the tree)
@@ -34,16 +33,6 @@ def build_merkle_tree(data_list):
 
     # we return the pair (root node, tree)
     return tree[-1][0], tree
-
-
-def fernet_encrypt(data, key):
-    fernet = Fernet(key)
-    return fernet.encrypt(data.encode('utf-8'))
-
-
-def fernet_decrypt(encrypted_data, key):
-    fernet = Fernet(key)
-    return fernet.decrypt(encrypted_data).decode('utf-8')
 
 
 def verify_data(decrypted_data, leaf_index, merkle_root, leaves, tree):
@@ -90,23 +79,16 @@ def verify_data(decrypted_data, leaf_index, merkle_root, leaves, tree):
     # the verification holds iff the root matches with the computed hash
     return current_hash == merkle_root
 
-
-if __name__ == "__main__":
-    data_list = ["message_1", "message_2", "message_3", "message_4"]
-
-    merkle_root, tree = build_merkle_tree(data_list)
-    key = Fernet.generate_key()
-
-    for i, level in enumerate(tree):
-        print(f'Livello {len(tree) - i}, numero nodi: {len(level)}', ', '.join(level))
-
-    encrypted_data = [fernet_encrypt(data, key) for data in data_list]
-    leaf_index = 2
-    decrypted_data = fernet_decrypt(encrypted_data[leaf_index], key)
-
-    print(f"Decrypted data: {decrypted_data}")
-
-    if verify_data(decrypted_data, leaf_index, merkle_root, tree[0], tree):
-        print(f"Data '{decrypted_data}' is verified using the Merkle tree!")
-    else:
-        print(f"Data verification failed for '{decrypted_data}'!")
+def compute_merkle_proofs(leaves, tree):
+    """Costruisce la lista completa di Merkle proof π_i per ogni attributo"""
+    proofs = []
+    for i in range(len(leaves)):
+        proof = []
+        index = i
+        for level in tree[:-1]:
+            sibling = index + 1 if index % 2 == 0 else index - 1
+            if 0 <= sibling < len(level):
+                proof.append(level[sibling])
+            index //= 2
+        proofs.append(proof)
+    return proofs
