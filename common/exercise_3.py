@@ -78,8 +78,8 @@ def verify_data(decrypted_data, leaf_index, merkle_root, leaves, tree):
 
     # the verification holds iff the root matches with the computed hash
     return current_hash == merkle_root
-
-def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
+def verify_merkle_proof(h_i: str, proof: List[str], root: str, index: int) -> bool:
+#def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
         """Verifica che h_i + π_i risalga alla Merkle Root"""
         current_hash = h_i
         for sibling in proof:
@@ -92,14 +92,19 @@ def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> 
 
 def compute_merkle_proofs(leaves, tree):
     """Costruisce la lista completa di Merkle proof π_i per ogni attributo"""
-    proofs = []
+    proofs_with_index = []
     for i in range(len(leaves)):
         proof = []
         index = i
+        idx_for_proof = i  
         for level in tree[:-1]:
             sibling = index + 1 if index % 2 == 0 else index - 1
             if 0 <= sibling < len(level):
                 proof.append(level[sibling])
             index //= 2
-        proofs.append(proof)
-    return proofs
+        # Restituiamo un dizionario con proof e posizione
+        proofs_with_index.append({
+            "index": idx_for_proof,
+            "proof": proof
+        })
+    return proofs_with_index

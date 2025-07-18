@@ -1,11 +1,13 @@
 import json
 import os
-from typing import List, Tuple
 from cryptography import x509
-from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, hmac, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from common.exercise_3 import sha256, verify_merkle_proof
+from common.crypto_utils import verify_signature_VC
+from typing import List
+from cryptography.hazmat.primitives.asymmetric import utils
+import copy
 
 
 class CredentialHolder:
@@ -28,7 +30,6 @@ class CredentialHolder:
             os.makedirs(os.path.dirname(k_wallet_path), exist_ok=True)
             with open(k_wallet_path, "wb") as f:
                 f.write(self.k_wallet)
-                
     def verify_credential(self, payload: dict) -> bool:
         """Esegue tutti i controlli sulla VC ricevuta"""
         VC = payload["VC"]
@@ -41,7 +42,7 @@ class CredentialHolder:
         os.makedirs(wallet_path, exist_ok=True)
 
         # Step 1: verifica firma dell’università
-        if not self.verify_signature(VC):
+        if not verify_signature_VC(VC):
             print(" Firma dell’università non valida.")
             return False
         print(" Firma dell’università valida.")
@@ -57,12 +58,14 @@ class CredentialHolder:
 
         # Step 3: verifica Merkle proof per ogni attributo
         merkle_root = VC["merkle"]["root"]
-        for i, (attr_json, proof) in enumerate(zip(attributes, proofs)):
+        for i, (attr_json, proof_entry) in enumerate(zip(attributes, proofs)):
             h_i = sha256(attr_json)
-            if not verify_merkle_proof(h_i, proof, merkle_root, i):
-                print(f" π_{i} NON valida per attributo {i}")
+            index = proof_entry["index"]
+            proof = proof_entry["proof"]
+            if not verify_merkle_proof(h_i, proof, merkle_root, index):
+                print(f" π_{i} NON valida per attributo {i} (indice Merkle: {index})")
                 return False
-            print(f" π_{i} valida per attributo {i}")
+            print(f" π_{i} valida per attributo {i} (indice Merkle: {index})")
 
         # Step 4: salva HMAC locale nel wallet
         hmac_value = self.compute_local_hmac(VC)
@@ -83,30 +86,6 @@ class CredentialHolder:
         print("\nTutte le informazioni sono state salvate nel wallet.")
         return True
 
-    def verify_signature(self, vc: dict) -> bool:
-        """Verifica la firma hash-then-sign dell’università"""
-        signed_data = vc["signature"]["signedData"]
-        signature = bytes.fromhex(vc["signature"]["signatureValue"])
-
-        with open("issuer/cert/issuer_cert.pem", "rb") as f:
-            cert = x509.load_pem_x509_certificate(f.read())
-            pk_issuer = cert.public_key()
-
-        digest = hashes.Hash(hashes.SHA256())
-        digest.update(signed_data.encode())
-        final_digest = digest.finalize()
-
-        try:
-            pk_issuer.verify(
-                signature,
-                final_digest,
-                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                hashes.SHA256()
-            )
-            return True
-        except Exception:
-            return False
-
     def compute_local_hmac(self, vc: dict) -> bytes:
         """Calcola e salva HMAC della VC per protezione locale"""
         vc_bytes = json.dumps(vc, separators=(",", ":"), sort_keys=True).encode()
@@ -124,7 +103,6 @@ class CredentialHolder:
             return True
         except Exception:
             return False
-
     def prepare_presentation(self, vc: dict, vc_hmac: bytes, attributes: List[str], proofs: List[List[str]], nonce: str, issued_at: str, expires_at: str, aud: str) -> dict:
         while True:
             print("\nEsami disponibili:")
@@ -142,12 +120,14 @@ class CredentialHolder:
                 print(" Input non valido. Usa solo numeri separati da virgole.\n")
                 continue
 
-            m_i = [json.loads(attributes[i]) for i in indici]
+            #m_i = [json.loads(attributes[i]) for i in indici]
+            m_i = [attributes[i] for i in indici]
             π_i = [proofs[i] for i in indici]
 
             print("\nHai selezionato i seguenti esami:")
             for m in m_i:
-                print(f" - {m['nome_esame']} ({m['cod_corso']}, voto: {m['voto']})")
+                m_dict = json.loads(m)
+                print(f" - {m_dict['nome_esame']} ({m_dict['cod_corso']}, voto: {m_dict['voto']})")
 
             conferma = input("Vuoi procedere con la creazione del certificato? (s/n): ").lower()
             if conferma == "s":
@@ -156,10 +136,11 @@ class CredentialHolder:
                 print("Ripeti la selezione degli esami.\n")
 
         if self.verify_local_integrity(vc, vc_hmac):
-            print("Integrità della VC verificata con successo.")
+            print("\nIntegrità della VC verificata con successo. \n")
         else:
-            print("Integrità della VC compromessa. Non è possibile procedere.")
+            print("\nIntegrità della VC compromessa. Non è possibile procedere.")
             return None
+        
         # Costruzione presentazione
         P_prot = {
             "Credenziale": vc,
@@ -171,14 +152,19 @@ class CredentialHolder:
             "aud": aud,
         }
 
+        P_prot_to_sign = copy.deepcopy(P_prot) 
+        del P_prot_to_sign["Credenziale"]
         digest = hashes.Hash(hashes.SHA256())
-        digest.update(json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode())
+        digest.update(json.dumps(P_prot_to_sign, separators=(",", ":"), sort_keys=True).encode())
         final_digest = digest.finalize()
 
         signature = self.private_key.sign(
             final_digest,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-            hashes.SHA256()
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            utils.Prehashed(hashes.SHA256())
         )
 
         P_prot["signature_holder"] = signature.hex()

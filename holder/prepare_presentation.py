@@ -25,6 +25,33 @@ def load_vc_package(cert_path):
         vc_hmac = f.read()
     return vc, attributes, proofs, vc_hmac
 
+
+def stampa_presentazione(P_prot):
+    VC = P_prot["Credenziale"]
+    print("Contenuto parziale certificato inviato:")
+    print(f" - ID_C: {VC['ID_C']}")
+    print(f" - Issuer: {VC['issuer']}")
+    print(f" - Holder: {VC['holder']}")
+    print(f" - Expiration: {VC['expirationDate']}")
+    print(f" - Merkle Root: {VC['merkle']['root'][:8]}...")
+
+    print("\nAttributi presentati:")
+    for i, (m_serialized, proof_entry) in enumerate(zip(P_prot["m_i"], P_prot["π_i"])):
+        attr = json.loads(m_serialized)
+        print(f"\n [{i}] {attr['nome_esame']}")
+        print(f"     • Codice: {attr['cod_corso']}")
+        print(f"     • Voto: {attr['voto']}")
+        print(f"     • Data: {attr['data']}")
+        print(f"     • Docente: {attr['docente']}")
+        print(f"     • Tipo: {attr['tipo_esame']}")
+        print(f"     • CFU: {attr['CFU']}")
+
+        print(f"     • Index Merkle originale: {proof_entry['index']}")
+        print(f"     • Proof π_{i}:")
+        for j, h in enumerate(proof_entry["proof"]):
+            print(f"         ├─ {j+1}. {h}")
+
+
 if __name__ == "__main__":
     # === Step 1: Carica e decifra la challenge ===
     with open("data/challenge_verifier_holder/key/session_key_holder.shared", "rb") as f:
@@ -124,5 +151,8 @@ if __name__ == "__main__":
     with open("data/challenge_verifier_holder/P_prot_ciphered.enc", "wb") as f:
         f.write(encrypted_presentation)
 
-    print("Presentazione cifrata salvata in 'data/challenge_verifier_holder/P_prot_ciphered.enc'")
+    print("=== Contenuto della presentazione inviata ===")
+    stampa_presentazione(P_prot)
+
+    print("\nPresentazione cifrata salvata in 'data/challenge_verifier_holder/P_prot_ciphered.enc'")
   

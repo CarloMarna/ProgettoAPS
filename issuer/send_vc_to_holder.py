@@ -52,14 +52,14 @@ if __name__ == "__main__":
     print(f" Revocation ID: {vc['revocation']['revocationId'][:40]}...")
 
     # === Step 5: Calcolo delle Merkle proof π_i ===
-    proofs = compute_merkle_proofs(tree[0], tree)
-    print(f" Merkle tree costruito e {len(proofs)} prove generate.")
+    proofs_with_index = compute_merkle_proofs(tree[0], tree)
+    print(f" Merkle tree costruito e {len(proofs_with_index)} prove generate.")
 
     # === Step 6: Costruzione del payload cifrato ===
     payload = {
         "VC": vc,
         "attributes": serialized_attrs,
-        "proofs": proofs
+        "proofs": proofs_with_index
     }
 
     encrypted_payload = fernet.encrypt(

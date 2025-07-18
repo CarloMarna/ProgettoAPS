@@ -30,11 +30,31 @@ expires_at = issued_at + timedelta(minutes=2)
 aud = "CN=Mario Rossi, SerialNumber=123456"
 
 # === Recupera esami richiesti dallo studente dal database simulato ===
-esami = load_student_exams(aud)
+# === Carica tutti gli esami disponibili dello studente
+tutti_esami = load_student_exams(aud)
 
-if not esami:
+if not tutti_esami:
     print(f" Nessun esame associato allo studente '{aud}'. Challenge non generata.")
     exit(1)
+
+# === Mostra all'utente gli esami disponibili
+print("\nEsami disponibili per lo studente:")
+for i, nome_esame in enumerate(tutti_esami):
+    print(f" [{i}] {nome_esame}")
+
+# === Selezione interattiva degli esami da inserire nella challenge
+while True:
+    scelti = input("\nInserisci gli indici separati da virgola degli esami da includere nella challenge: ")
+    try:
+        indici = [int(x.strip()) for x in scelti.split(",")]
+        if any(i < 0 or i >= len(tutti_esami) for i in indici):
+            print(" Indici non validi. Riprova.")
+            continue
+        esami = [tutti_esami[i] for i in indici]
+        break
+    except ValueError:
+        print(" Input non valido. Usa numeri separati da virgole.")
+
 
 # === Costruisce il messaggio della challenge ===
 challenge_text = f"Presenta esami {', '.join(esami)}"

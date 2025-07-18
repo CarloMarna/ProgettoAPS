@@ -47,12 +47,11 @@ def generate_cert_and_key(subject_dn: str, cert_path: str, key_path: str):
     print(f"    Chiave privata: {key_path}")
     print(f"    Certificato:    {cert_path}")
 
-
-
 if __name__ == "__main__":
     os.makedirs("issuer", exist_ok=True)
     os.makedirs("holder", exist_ok=True)
     os.makedirs("verifier", exist_ok=True)
+    os.makedirs("ocsp", exist_ok=True)
 
     # Issuer (università)
     generate_cert_and_key(
@@ -68,9 +67,17 @@ if __name__ == "__main__":
         key_path="holder/cert/holder_private_key.pem"
     )
 
-    # Verifier (azienda, ente, ecc.)
+    # Verifier 
     generate_cert_and_key(
         subject_dn={"CN": "Verifier Inc", "O": "VerifierOrg", "C": "EU"},
         cert_path="verifier/cert/verifier_cert.pem",
         key_path="verifier/cert/verifier_private_key.pem"
     )
+    
+    # OCSP Server (ente di revoca)
+    generate_cert_and_key(
+        subject_dn={"CN": "OCSP Authority", "O": "OCSPRegistry", "C": "EU"},
+        cert_path="ocsp/cert/ocsp_cert.pem",
+        key_path="ocsp/cert/ocsp_private_key.pem"
+    )
+

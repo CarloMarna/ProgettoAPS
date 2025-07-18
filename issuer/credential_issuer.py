@@ -7,8 +7,8 @@ from cryptography import x509  # per gestire certificati
 from cryptography.hazmat.primitives import hashes, serialization  # per hash e chiavi
 from cryptography.hazmat.primitives.asymmetric import padding  # per padding RSA PSS
 
-from common.exercise_3 import build_merkle_tree
-from ocsp.registry import OCSPRegistry
+from common.exercise_3 import build_merkle_tree, sha256  # Merkle Tree dal codice del professore
+from ocsp.registry import OCSPRegistry  # per la gestione della revoca
 
 class CredentialIssuer:
     def __init__(self,
@@ -22,14 +22,11 @@ class CredentialIssuer:
         self.schema_url = schema_url                        # URL dello schema JSON ufficiale
         self.revocation_registry = revocation_registry      # Endpoint OCSP per verifica revoca
         self.expiration_date = "2028-03-15T10:30:00Z"       # Scadenza della credenziale
-        self.ocsp = OCSPRegistry()
+        self.ocsp_registry = OCSPRegistry()            # Registry per OCSP
 
         # Carica il certificato dell’università per estrarre l'URL di verifica
         with open(cert_path, "rb") as f:
-            cert = x509.load_pem_x509_certificate(f.read())
-            common_name = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-            # Costruisce il verificationMethod (es. https://certs.rennes.edu/university-of-rennes.pem)
-            self.verification_method = f"https://certs.rennes.edu/{common_name.lower().replace(' ', '-')}.pem"
+            self.verification_method = cert_path
 
         # Carica la chiave privata dell’università da file PEM per firmare i dati
         with open(private_key_path, "rb") as f:
@@ -79,7 +76,18 @@ class CredentialIssuer:
 
         # Calcola l’identificatore di revoca crittograficamente sicuro
         revocation_id = self.generate_revocation_id(id_c, salt)
+        revocation_id_signature = self.private_key.sign(
+            revocation_id.encode(),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+       
+        self.ocsp_registry.register( revocation_id, revocation_id_signature.hex(), self.verification_method)
 
+        print("\nCredenziale aggiunta al registro di revoca OCSP")
         # Costruisce la stringa da firmare con hash-then-sign
         signed_data = f"{merkle_root}∥{id_c}∥{self.issuer_dn}∥{holder_dn}∥{self.schema_url}∥{self.expiration_date}∥{revocation_id}∥{self.revocation_registry}"
 
@@ -107,5 +115,5 @@ class CredentialIssuer:
                 "registry": self.revocation_registry
             }
         }
-        self.ocsp.register(revocation_id)
+
         return VC, serialized, tree

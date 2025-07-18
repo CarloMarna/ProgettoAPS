@@ -1,131 +1,121 @@
 import json
-from datetime import datetime
+import os
+from datetime import datetime, timezone
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.fernet import Fernet
-
-from common.exercise_3 import sha256
-from common.dh_utils import derive_shared_key
-
-NONCE_DB = set()  # simulazione di un database dei nonce visti
-
-def verify_merkle_proof(h_i, proof, root, index):
-    current = h_i
-    for sibling in proof:
-        if index % 2 == 0:
-            current = sha256(current + sibling)
-        else:
-            current = sha256(sibling + current)
-        index //= 2
-    return current == root
+from common.crypto_utils import sha256_digest, verify_signature_VC, verify_signature
+from common.exercise_3 import verify_merkle_proof, sha256
+from ocsp.registry import OCSPRegistry
 
 
-if __name__ == "__main__":
-    # === Step 1: Carica challenge originale per y_H, sp ===
-    with open("../holder/challenge_response_verifier.json", "r") as f:
-        challenge = json.load(f)
-    y_H = int(challenge["y_H"])
-    sp = int(challenge["original_challenge"]["challenge"]["sp"], 16)
+# === CONFIG ===
+P_PROT_PATH = "data/challenge_verifier_holder/P_prot_ciphered.enc"
+SESSION_KEY_PATH = "data/challenge_verifier_holder/key/session_key_verifier.shared"
+USED_NONCES_PATH = "data/verifier/used_nonces_verifier.txt"
 
-    # === Step 2: Carica chiave x_V del verificatore ===
-    with open("verifier/verifier_dh_private.txt", "r") as f:
-        x_V = int(f.read())
+# === Step 1: Decifra la presentazione ===
+with open(SESSION_KEY_PATH, "rb") as f:
+    session_key = f.read()
+fernet = Fernet(session_key)
 
-    R = derive_shared_key(y_H, x_V, p=sp)
-    fernet = Fernet(R)
+with open(P_PROT_PATH, "rb") as f:
+    encrypted = f.read()
 
-    # === Step 3: Decifra la presentazione ===
-    with open("../data/P_prot_ciphered.enc", "rb") as f:
-        encrypted = f.read()
-    decrypted = fernet.decrypt(encrypted)
-    P_prot = json.loads(decrypted)
+decrypted = fernet.decrypt(encrypted)
+P_prot = json.loads(decrypted)
 
-    # === Step 4: Verifica firma dell’università sulla MerkleRoot ===
-    with open("verifier_cert.pem", "rb") as f:
-        cert_verifier = x509.load_pem_x509_certificate(f.read())
+# === Step 2: Estrai dati ===
+VC = P_prot["Credenziale"]
+m_i_list = P_prot["m_i"]
+pi_list = P_prot["π_i"]
+nonce = P_prot["nonce"]
+issued_at = P_prot["issued_at"]
+expires_at = P_prot["expires_at"]
+aud = P_prot["aud"]
+signature_holder = bytes.fromhex(P_prot["signature_holder"])
 
-    with open("../issuer/issuer_cert.pem", "rb") as f:
-        cert_issuer = x509.load_pem_x509_certificate(f.read())
-        pk_issuer = cert_issuer.public_key()
+# === Step 3: Verifica firma issuer sulla VC ===
+print("\nVerifica della Verifiable Credential (VC)")
+merkle_root = VC["merkle"]["root"]
 
-    to_sign = (
-        P_prot["MerkleRoot"] + "∥" +
-        P_prot["ID_C"] + "∥" +
-        P_prot["issuer"] + "∥" +
-        P_prot["holder"] + "∥" +
-        P_prot["schema"] + "∥" +
-        P_prot["expirationDate"] + "∥" +
-        P_prot["revocation"]["revocationId"] + "∥" +
-        P_prot["revocation"]["registry"]
-    ).encode()
 
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(to_sign)
-    h_root = digest.finalize()
+signed_data = VC["signature"]["signedData"]
+issuer_cert_path = "issuer/cert/issuer_cert.pem"
 
-    try:
-        pk_issuer.verify(
-            bytes.fromhex(P_prot["signature"]["signatureValue"]),
-            h_root,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-            hashes.SHA256()
-        )
-        print("✅ Firma università sulla MerkleRoot valida.")
-    except:
-        print("❌ Firma università NON valida.")
-        exit(1)
+with open(issuer_cert_path, "rb") as f:
+    issuer_cert = x509.load_pem_x509_certificate(f.read())
 
-    # === Step 5: Verifica firma dello studente ===
-    signature_holder = bytes.fromhex(P_prot["signature_holder"])
-    del P_prot["signature_holder"]
-    message_bytes = json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode()
+if not verify_signature_VC(VC):
+    print(" Firma dell’università NON valida.")
+    exit(1)
+print(" Firma dell’università valida.")
 
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(message_bytes)
-    h_prot = digest.finalize()
+# === Step 4: Verifica OCSP (simulata) ===
+print("\nVerifica OCSP")
+revocation = VC["revocation"]
+revocation_id = revocation["revocationId"]
+ocsp_response = registry.check_status(revocation_id)
+if ocsp_response["status"] != "valid":
+    print("Credenziale revocata secondo OCSP.")
+    exit(1)
+print(" Stato OCSP: good")
 
-    cert_holder = x509.load_pem_x509_certificate(P_prot["cert_holder"].encode())
-    pk_holder = cert_holder.public_key()
+# === Step 5: Verifica firma dello studente ===
+print("\nVerifica firma dello studente")
+holder_cert_path = "holder/cert/holder_cert.pem"
+holder_cert = x509.load_pem_x509_certificate(open(holder_cert_path, "rb").read())
+pk_holder = holder_cert.public_key()
 
-    try:
-        pk_holder.verify(
-            signature_holder,
-            h_prot,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-            hashes.SHA256()
-        )
-        print("✅ Firma dello studente su P_prot valida.")
-    except:
-        print("❌ Firma dello studente NON valida.")
-        exit(1)
+unsigned = {k: P_prot[k] for k in P_prot if k not in ("signature_holder", "Credenziale")}
+serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True)
+digest_holder = sha256_digest(serialized)
 
-    # === Step 6: Verifica Merkle proof ===
-    m_i = json.dumps(P_prot["m_i"], separators=(",", ":"), sort_keys=True)
-    h_i = sha256(m_i)
-    if verify_merkle_proof(h_i, P_prot["π_i"], P_prot["MerkleRoot"], 0):
-        print("✅ Merkle proof valida.")
+if not verify_signature(digest_holder, signature_holder, pk_holder):
+    print("Firma dello studente NON valida.")
+    exit(1)
+print("Firma dello studente valida.")
+
+# === Step 6: Verifica Merkle Proofs ===
+print("\nVerifica Merkle Proofs")
+print("--------------------------------------------------")
+for i, (attr_serialized, proof_entry) in enumerate(zip(m_i_list, pi_list)):
+    h_i = sha256(attr_serialized)
+    index = proof_entry["index"]
+    proof = proof_entry["proof"]
+
+    print(f"Attributo {i}")
+    print(f"  - m_i       : {attr_serialized}")
+    print(f"  - h_i       : {h_i}")
+    print(f"  - index     : {index}")
+    print("  - π_i       :")
+    for j, p in enumerate(proof):
+        print(f"      [{j}] {p}")
+    print(f"  - Merkle Root attesa: {merkle_root}")
+
+    result = verify_merkle_proof(h_i, proof, merkle_root, index)
+    if result:
+        print("  - Verifica Merkle Proof: VALIDA\n")
     else:
-        print("❌ Merkle proof NON valida.")
+        print("  - Verifica Merkle Proof: NON valida\n")
         exit(1)
 
-    # === Step 7: Verifica freshness ===
-    now = datetime.utcnow()
-    ts = datetime.fromisoformat(P_prot["timestamp"].replace("Z", "+00:00"))
-    exp = datetime.fromisoformat(P_prot["expiration"].replace("Z", "+00:00"))
+# === Step 7: Timestamp e nonce ===
+now = datetime.now(timezone.utc)
+if not (datetime.fromisoformat(issued_at) <= now <= datetime.fromisoformat(expires_at)):
+    print("Timestamp non valido.")
+    exit(1)
 
-    if not (ts <= now <= exp):
-        print("❌ Timestamp non valido.")
-        exit(1)
+used_nonces = set()
+if os.path.exists(USED_NONCES_PATH):
+    with open(USED_NONCES_PATH, "r") as f:
+        used_nonces = set(line.strip() for line in f)
 
-    if P_prot["nonce"] in NONCE_DB:
-        print("❌ Nonce già visto: replay.")
-        exit(1)
+if nonce in used_nonces:
+    print("Nonce già usato.")
+    exit(1)
 
-    NONCE_DB.add(P_prot["nonce"])
-    print("🕓 Freshness OK.")
+with open(USED_NONCES_PATH, "a") as f:
+    f.write(nonce + "\n")
 
-    # === Step 8: Mock verifica OCSP ===
-    print("🕵️‍♂️ Verifica OCSP simulata (OK)")
-
-    print("\n✅ Presentazione verificata correttamente.")
+print("Timestamp e nonce validi.")
+print("\nPresentazione accettata e verificata con successo.")

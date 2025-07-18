@@ -1,7 +1,8 @@
 import subprocess
 import sys
 import os
-
+from ocsp.registry import OCSPRegistry
+from issuer.credential_issuer import CredentialIssuer
 # Aggiunge la root del progetto al PYTHONPATH
 sys.path.insert(0, os.path.abspath("."))  # ROOT dir: progetto_cred_vc/
 
@@ -16,7 +17,7 @@ def run(title, command):
 
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
-
+    
     # === 1. Setup: Generazione certificati
     run("1. Generazione certificati", "python generate_certs.py")
 
@@ -36,9 +37,8 @@ if __name__ == "__main__":
     run("3.4 Holder verifica risposta ", "python -m holder.process_dh_response")
     run("3.5 Verifier invia challenge selettiva", "python -m verifier.generate_selective_challenge")
     run("3.6 Holder prepara presentazione selettiva", "python -m holder.prepare_presentation")
-    '''run("3.3 Holder prepara presentazione", "python -m holder.prepare_presentation")
 
     # === 4. VERIFIER
     run("4. Verifier verifica presentazione", "python -m verifier.verify_presentation")
 
-    print("\n✅ Tutto il flusso è stato eseguito con successo.")'''
+    print("\n Tutto il flusso è stato eseguito con successo.")
