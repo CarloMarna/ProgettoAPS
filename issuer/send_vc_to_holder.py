@@ -40,7 +40,7 @@ if __name__ == "__main__":
         cert_path="issuer/cert/issuer_cert.pem",
         private_key_path="issuer/cert/issuer_private_key.pem",
         schema_url="https://schemas.rennes.edu/credential/v1",
-        revocation_registry="https://ocsp.edu-europe.eu/rennes"
+        revocation_registry="data/ocsp/ocsp_registry.json"
     )
 
     vc, serialized_attrs, tree = issuer.issue(holder_dn, attributes)
@@ -70,5 +70,5 @@ if __name__ == "__main__":
     with open("data/challenge_issuer_holder/vc_payload.enc", "wb") as f:
         f.write(encrypted_payload)
 
-    print("Pacchetto VC cifrato salvato in 'data/vc_payload.enc'")
+    print("\nPacchetto VC cifrato salvato in 'data/vc_payload.enc'")
     print("Procedura completata con successo.")

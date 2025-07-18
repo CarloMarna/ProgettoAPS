@@ -50,18 +50,19 @@ if not verify_signature_VC(VC):
     exit(1)
 print(" Firma dell’università valida.")
 
-# === Step 4: Verifica OCSP (simulata) ===
-print("\nVerifica OCSP")
-revocation = VC["revocation"]
-revocation_id = revocation["revocationId"]
-ocsp_response = registry.check_status(revocation_id)
-if ocsp_response["status"] != "valid":
-    print("Credenziale revocata secondo OCSP.")
+# === Step 4: Verifica OCSP  ===
+ocsp = OCSPRegistry(VC["revocation"]["registry"])
+revocation_id = VC["revocation"]["revocationId"]
+ocsp_response = ocsp.check_status(revocation_id)
+if ocsp_response["status"] == "revoked":
+    print(" Credenziale revocata secondo OCSP.")
+    exit(1)
+elif ocsp_response["status"] == "unknown":
+    print(" Credenziale sconosciuta secondo OCSP.")
     exit(1)
 print(" Stato OCSP: good")
 
 # === Step 5: Verifica firma dello studente ===
-print("\nVerifica firma dello studente")
 holder_cert_path = "holder/cert/holder_cert.pem"
 holder_cert = x509.load_pem_x509_certificate(open(holder_cert_path, "rb").read())
 pk_holder = holder_cert.public_key()
@@ -71,9 +72,9 @@ serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True)
 digest_holder = sha256_digest(serialized)
 
 if not verify_signature(digest_holder, signature_holder, pk_holder):
-    print("Firma dello studente NON valida.")
+    print(" Firma dello studente NON valida.")
     exit(1)
-print("Firma dello studente valida.")
+print(" Firma dello studente valida.")
 
 # === Step 6: Verifica Merkle Proofs ===
 print("\nVerifica Merkle Proofs")

@@ -22,7 +22,7 @@ class CredentialIssuer:
         self.schema_url = schema_url                        # URL dello schema JSON ufficiale
         self.revocation_registry = revocation_registry      # Endpoint OCSP per verifica revoca
         self.expiration_date = "2028-03-15T10:30:00Z"       # Scadenza della credenziale
-        self.ocsp_registry = OCSPRegistry()            # Registry per OCSP
+        self.ocsp_registry = OCSPRegistry(revocation_registry)            # Registry per OCSP
 
         # Carica il certificato dell’università per estrarre l'URL di verifica
         with open(cert_path, "rb") as f:
@@ -76,18 +76,32 @@ class CredentialIssuer:
 
         # Calcola l’identificatore di revoca crittograficamente sicuro
         revocation_id = self.generate_revocation_id(id_c, salt)
+                
+        # Carica il certificato e calcola il suo fingerprint
+        with open(self.verification_method, "rb") as f:
+            cert_bytes = f.read()
+            cert = x509.load_pem_x509_certificate(cert_bytes)
+            cert_fingerprint = cert.fingerprint(hashes.SHA256())
+
+        # Costruisci un digest combinato di revocation_id + fingerprint del certificato
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(revocation_id.encode())
+        digest.update(cert_fingerprint)
+        final_digest = digest.finalize()
+
+        # Firma del digest
         revocation_id_signature = self.private_key.sign(
-            revocation_id.encode(),
+            final_digest,
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
                 salt_length=padding.PSS.MAX_LENGTH
             ),
             hashes.SHA256()
         )
-       
-        self.ocsp_registry.register( revocation_id, revocation_id_signature.hex(), self.verification_method)
 
-        print("\nCredenziale aggiunta al registro di revoca OCSP")
+        # Registra su OCSP
+        self.ocsp_registry.register(revocation_id, revocation_id_signature.hex(), self.verification_method)
+
         # Costruisce la stringa da firmare con hash-then-sign
         signed_data = f"{merkle_root}∥{id_c}∥{self.issuer_dn}∥{holder_dn}∥{self.schema_url}∥{self.expiration_date}∥{revocation_id}∥{self.revocation_registry}"
 
