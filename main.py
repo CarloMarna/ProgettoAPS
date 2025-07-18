@@ -41,4 +41,4 @@ if __name__ == "__main__":
     # === 4. VERIFIER
     run("4. Verifier verifica presentazione", "python -m verifier.verify_presentation")
 
-    print("\n Tutto il flusso è stato eseguito con successo.")
+    print("\nTutto il flusso è stato eseguito con successo.")

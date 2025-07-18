@@ -106,6 +106,10 @@ if not (datetime.fromisoformat(issued_at) <= now <= datetime.fromisoformat(expir
     print("Timestamp non valido.")
     exit(1)
 
+if(VC["expirationDate"] < now.isoformat()):
+    print("Credenziale scaduta.")
+    exit(1)
+
 used_nonces = set()
 if os.path.exists(USED_NONCES_PATH):
     with open(USED_NONCES_PATH, "r") as f:
@@ -118,5 +122,5 @@ if nonce in used_nonces:
 with open(USED_NONCES_PATH, "a") as f:
     f.write(nonce + "\n")
 
-print("Timestamp e nonce validi.")
-print("\nPresentazione accettata e verificata con successo.")
+print("Credenziale valida, Timestamp e nonce validi.")
+print("Presentazione accettata e verificata con successo.")
