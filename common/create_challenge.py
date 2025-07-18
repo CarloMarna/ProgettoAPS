@@ -8,28 +8,6 @@ import hashlib
 
 from common.dh_utils import DH_PARAMS
 
-def sign_challenge_dict(challenge_dict, private_key):
-    fields = [
-        challenge_dict["nonce"],
-        challenge_dict["issued_at"],
-        challenge_dict["expires_at"],
-        challenge_dict["aud"],
-        challenge_dict["sp"],
-        challenge_dict["ge"]
-    ]
-    concatenated = "".join(fields).encode("utf-8")
-    digest = hashlib.sha256(concatenated).digest()
-
-    signature = private_key.sign(
-        digest,
-        padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH,
-        ),
-        utils.Prehashed(hashes.SHA256())
-    )
-    return signature
-
 def create_challenge(role):
     nonce = os.urandom(32).hex()
     issued_at = datetime.now(timezone.utc).isoformat()
@@ -46,6 +24,7 @@ def create_challenge(role):
     with open(key_path, "rb") as f:
         private_key = serialization.load_pem_private_key(f.read(), password=None)
 
+    # Step 1: challenge senza firma
     challenge_dict = {
         "nonce": nonce,
         "issued_at": issued_at,
@@ -55,12 +34,26 @@ def create_challenge(role):
         "ge": ge,
     }
 
-    signature = sign_challenge_dict(challenge_dict, private_key)
-    signature_hex = signature.hex()
+    # Step 2: serializzazione deterministica per la firma
+    json_data = json.dumps(challenge_dict, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    digest = hashlib.sha256(json_data).digest()
 
+    signature = private_key.sign(
+        digest,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        utils.Prehashed(hashes.SHA256())
+    )
+
+    # Step 3: aggiunta della firma dentro la challenge
+    challenge_dict["signature"] = signature.hex()
+
+    # Step 4: scrittura su file
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
-        json.dump({"challenge": challenge_dict, "signature": signature_hex}, f, indent=2)
+        json.dump(challenge_dict, f, indent=2)
 
     print(f"Challenge creata per '{role}' e salvata in '{output_path}'")
     print(f" Nonce:        {nonce}")
@@ -69,7 +62,8 @@ def create_challenge(role):
     print(f" Audience:     {aud}")
     print(f" SP:           {sp[:40]}...")
     print(f" GE:           {ge}")
-    print(f" Signature:    {signature_hex[:40]}...")
+    print(f" Signature:    {challenge_dict['signature'][:40]}...")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Crea una challenge firmata per issuer o verifier")

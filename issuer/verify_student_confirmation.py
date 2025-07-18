@@ -6,8 +6,9 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import  verify_signature
 from common.dh_utils import derive_shared_key
+import hashlib
 
 # === Step 1: Carica conferma dello studente ===
 with open("data/challenge_issuer_holder/student_session_confirm.json", "r") as f:
@@ -23,7 +24,9 @@ aud = confirmation["aud"]
 confirmation_type = confirmation["confirmation_type"]
 
 # === Step 2: Verifica firma dello studente ===
-digest = sha256_digest(nonce, issued_at, expires_at, aud, confirmation_type)
+digest = hashlib.sha256(
+    json.dumps(confirmation, sort_keys=True, separators=(",", ":")).encode("utf-8")
+).digest()
 
 with open("holder/cert/holder_cert.pem", "rb") as f:
     holder_cert = x509.load_pem_x509_certificate(f.read())
@@ -68,7 +71,7 @@ with open("data/issuer/issuer_dh_private.txt", "r") as f:
     x_B = int(f.read())
 
 with open("data/challenge_issuer_holder/challengeHolder.json", "r") as f:
-    challenge = json.load(f)["challenge"]
+    challenge = json.load(f)
 
 p = int(challenge["sp"], 16)
 shared_key = derive_shared_key(y_A, x_B, p)

@@ -3,8 +3,9 @@ from cryptography.fernet import Fernet
 
 from issuer.credential_issuer import CredentialIssuer
 from common.exercise_3 import compute_merkle_proofs
-from data.issuer.esami_holder import esami_per_holder
 
+with open("data/issuer/esami_holder.json", "r", encoding="utf-8") as f:
+    esami_per_holder = json.load(f)
 
 if __name__ == "__main__":
     print("Preparazione Verifiable Credential per lo studente...")

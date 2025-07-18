@@ -21,7 +21,7 @@ class CredentialHolder:
             self.cert_holder = x509.load_pem_x509_certificate(f.read())
 
         # Chiave HMAC generata localmente per il wallet
-        k_wallet_path = "data/wallet/k_wallet.bin"
+        k_wallet_path = "data/holder/wallet/k_wallet.bin"
         if os.path.exists(k_wallet_path):
             with open(k_wallet_path, "rb") as f:
                 self.k_wallet = f.read()
@@ -38,7 +38,7 @@ class CredentialHolder:
 
         issuer_dn = VC["issuer"]
         issuer_id = issuer_dn.lower().replace("cn=", "").replace(",", "").replace(" ", "-")
-        wallet_path = os.path.join("data/wallet", issuer_id)
+        wallet_path = os.path.join("data/holder/wallet", issuer_id)
         os.makedirs(wallet_path, exist_ok=True)
 
         # Step 1: verifica firma dell’università

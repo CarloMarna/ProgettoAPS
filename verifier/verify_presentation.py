@@ -3,9 +3,12 @@ import os
 from datetime import datetime, timezone
 from cryptography import x509
 from cryptography.fernet import Fernet
-from common.crypto_utils import sha256_digest, verify_signature_VC, verify_signature
+from common.crypto_utils import  verify_signature_VC, verify_signature
 from common.exercise_3 import verify_merkle_proof, sha256
 from ocsp.registry import OCSPRegistry
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+import hashlib
 
 
 # === CONFIG ===
@@ -52,8 +55,43 @@ print(" Firma dell’università valida.")
 
 # === Step 4: Verifica OCSP  ===
 ocsp = OCSPRegistry(VC["revocation"]["registry"])
+
 revocation_id = VC["revocation"]["revocationId"]
 ocsp_response = ocsp.check_status(revocation_id)
+
+rev_id = ocsp_response["revocationId"]
+status = ocsp_response["status"]
+timestamp = ocsp_response["timestamp"]
+path_cert = ocsp_response["path_cert"]
+signature = bytes.fromhex(ocsp_response["signature"])
+
+message = (rev_id + status + timestamp + path_cert).encode()
+
+with open(path_cert, "rb") as f:
+    cert = x509.load_pem_x509_certificate(f.read())
+    public_key = cert.public_key()
+
+digest = hashes.Hash(hashes.SHA256())
+digest.update(message)
+final_digest = digest.finalize()
+
+try:
+    public_key.verify(
+        signature,
+        final_digest,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    print(" Firma OCSP verificata correttamente.")
+
+except Exception as e:
+    print(" Errore verifica firma OCSP:", e)
+    exit(1)
+
+
 if ocsp_response["status"] == "revoked":
     print(" Credenziale revocata secondo OCSP.")
     exit(1)
@@ -68,8 +106,8 @@ holder_cert = x509.load_pem_x509_certificate(open(holder_cert_path, "rb").read()
 pk_holder = holder_cert.public_key()
 
 unsigned = {k: P_prot[k] for k in P_prot if k not in ("signature_holder", "Credenziale")}
-serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True)
-digest_holder = sha256_digest(serialized)
+serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True).encode()
+digest_holder = hashlib.sha256(serialized).digest()
 
 if not verify_signature(digest_holder, signature_holder, pk_holder):
     print(" Firma dello studente NON valida.")

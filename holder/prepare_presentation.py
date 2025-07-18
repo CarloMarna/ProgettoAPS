@@ -6,12 +6,10 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import  verify_signature
 from holder.credential_holder import CredentialHolder
-##RICORDA DI AGGIUNGERE AUD DELL'Universita
-
-
-def list_certifications(base_path="data/wallet"):
+import hashlib
+def list_certifications(base_path="data/holder/wallet"):
     return [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
 
 def load_vc_package(cert_path):
@@ -67,14 +65,17 @@ if __name__ == "__main__":
     signature_verifier = bytes.fromhex(challenge_obj["signature_verifier"])
 
     # === Step 2: Verifica firma del verificatore ===
-    digest = sha256_digest(
-        challenge,                        
-        challenge_obj["nonce"],
-        challenge_obj["issued_at"],
-        challenge_obj["expires_at"],
-        challenge_obj["aud"]
-    )
+    challenge_obj_to_verify = {
+        "challenge": challenge,
+        "nonce": challenge_obj["nonce"],
+        "issued_at": challenge_obj["issued_at"],
+        "expires_at": challenge_obj["expires_at"],
+        "aud": challenge_obj["aud"]
+    }
 
+    digest = hashlib.sha256(
+        json.dumps(challenge_obj_to_verify, sort_keys=True, separators=(",", ":")).encode()
+    ).digest()
 
     with open("verifier/cert/verifier_cert.pem", "rb") as f:
         verifier_cert = x509.load_pem_x509_certificate(f.read())
@@ -117,7 +118,7 @@ if __name__ == "__main__":
                 print(f"Inserisci un numero tra 1 e {len(certs)}.")
         except ValueError:
             print("Inserisci un numero valido.")
-    cert_path = os.path.join("data/wallet", selected_cert)
+    cert_path = os.path.join("data/holder/wallet", selected_cert)
 
     VC, attributes, proofs, vc_hmac = load_vc_package(cert_path)
 

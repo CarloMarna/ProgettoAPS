@@ -6,7 +6,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
 from common.dh_utils import generate_dh_key_pair, derive_shared_key
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import verify_signature
+import hashlib
 
 def load_json(path):
     with open(path, "r") as f:
@@ -35,14 +36,10 @@ def process_response(role):
     y_a = int(response["y_a"])
 
     # === Step 2: Verifica firma sulla challenge ===
-    digest_challenge = sha256_digest(
-        challenge["nonce"],
-        challenge["issued_at"],
-        challenge["expires_at"],
-        challenge["aud"],
-        challenge["sp"],
-        challenge["ge"]
-    )
+    challenge_data = {k: v for k, v in challenge.items() if k != "signature"}
+    digest_challenge = hashlib.sha256(
+        json.dumps(challenge_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
 
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
@@ -72,13 +69,10 @@ def process_response(role):
     print(" Challenge attualmente valida.")
 
     # === Step 4: Verifica firma dello studente ===
-    digest_student = sha256_digest(
-        response["nonce"],
-        response["issued_at"],
-        response["expires_at"],
-        response["aud"],
-        response["y_a"]
-    )
+    digest_student = hashlib.sha256(
+        json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
+
 
     with open("holder/cert/holder_cert.pem", "rb") as f:
         holder_cert = x509.load_pem_x509_certificate(f.read())
@@ -109,7 +103,17 @@ def process_response(role):
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat()
     aud = challenge["aud"]
 
-    digest_response = sha256_digest(nonce, issued_at, expires_at, aud, str(y_b))
+    server_response = {
+        "nonce": nonce,
+        "issued_at": issued_at,
+        "expires_at": expires_at,
+        "aud": aud,
+        "y_b": str(y_b)
+    }
+
+    digest_response = hashlib.sha256(
+        json.dumps(server_response, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
 
     with open(private_key_path, "rb") as f:
         private_key = serialization.load_pem_private_key(f.read(), password=None)
@@ -121,13 +125,7 @@ def process_response(role):
     )
 
     response_obj = {
-        "server_response": {
-            "nonce": nonce,
-            "issued_at": issued_at,
-            "expires_at": expires_at,
-            "aud": aud,
-            "y_b": str(y_b)
-        },
+        "server_response": server_response,
         "signature": signature.hex()
     }
 

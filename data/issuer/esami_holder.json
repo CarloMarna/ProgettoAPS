@@ -1,4 +1,4 @@
-esami_per_holder = { 
+{
     "CN=Mario Rossi, SerialNumber=123456": [
         {
             "nome_esame": "Basi di Dati",

@@ -34,50 +34,6 @@ def build_merkle_tree(data_list):
     # we return the pair (root node, tree)
     return tree[-1][0], tree
 
-
-def verify_data(decrypted_data, leaf_index, merkle_root, leaves, tree):
-    """Verify data against a leaf and a merkle tree.
-    :param decrypted_data: Decrypted data.
-    :param leaf_index: Leaf index.
-    :param merkle_root: Merkle root to verify.
-    :param leaves: Leaves to verify.
-    :param tree: Tree to verify."""
-
-    # we hash the data
-    data_hash = sha256(decrypted_data)
-
-    # this holds for this example only: if we already have the
-    # data, we can just check if the hash matches
-    if data_hash != leaves[leaf_index]:
-        return False
-
-    current_hash = data_hash
-    # traverse the whole tree except for the root, starting from the leaves level
-    for level in tree[:-1]:
-        # we identify the sibling needed to verify the hash...
-        if leaf_index % 2 == 0:
-            sibling_index = leaf_index + 1
-        else:
-            sibling_index = leaf_index - 1
-
-        # ... and we get it here
-        sibling_hash = (
-            level[sibling_index]
-            if sibling_index < len(level)
-            else level[-1]
-        )
-
-        # here we recompute the combined hash and we bring it to the upper levels
-        if leaf_index % 2 == 0:
-            current_hash = sha256(current_hash + sibling_hash)
-        else:
-            current_hash = sha256(sibling_hash + current_hash)
-
-        # move up to parent index
-        leaf_index //= 2
-
-    # the verification holds iff the root matches with the computed hash
-    return current_hash == merkle_root
 def verify_merkle_proof(h_i: str, proof: List[str], root: str, index: int) -> bool:
 #def verify_merkle_proof(h_i: bytes, proof: List[str], root: str, index: int) -> bool:
         """Verifica che h_i + π_i risalga alla Merkle Root"""

@@ -6,7 +6,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
 from common.dh_utils import derive_shared_key
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import verify_signature
+import hashlib
 
 # === Step 0: Carica la risposta del server (y_B) ===
 with open("data/challenge_issuer_holder/server_dh_response.json", "r") as f:
@@ -31,7 +32,9 @@ if not (datetime.fromisoformat( server_response["issued_at"]) <= now <= datetime
 print(" Finestra temporale valida.")
 
 # === Step 2: Verifica firma del server ===
-digest = sha256_digest(nonce, issued_at, expires_at, aud, str(y_b))
+digest = hashlib.sha256(
+    json.dumps(server_response, sort_keys=True, separators=(",", ":")).encode("utf-8")
+).digest()
 
 with open("issuer/cert/issuer_cert.pem", "rb") as f:
     issuer_cert = x509.load_pem_x509_certificate(f.read())
@@ -50,7 +53,7 @@ with open("data/holder/holder_dh_private.txt", "r") as f:
     x_a = int(f.read())
 
 with open("data/challenge_issuer_holder/challengeHolder.json", "r") as f:
-    challenge = json.load(f)["challenge"]
+    challenge = json.load(f)
 
 p = int(challenge["sp"], 16)
 shared_key = derive_shared_key(y_b, x_a, p)
@@ -73,13 +76,9 @@ confirmation_dict = {
     "confirmation_type": "session_established"
 }
 
-digest_confirmation = sha256_digest(
-    nonce,
-    issued_at_c,
-    expires_at_c,
-    confirmation_aud,
-    "session_established"
-)
+digest_confirmation = hashlib.sha256(
+    json.dumps(confirmation_dict, sort_keys=True, separators=(",", ":")).encode("utf-8")
+).digest()
 
 with open("holder/cert/holder_private_key.pem", "rb") as f:
     sk_holder = serialization.load_pem_private_key(f.read(), password=None)

@@ -7,7 +7,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
 from common.dh_utils import generate_dh_key_pair
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import  verify_signature
+import hashlib
 
 def load_json(path):
     with open(path, "r") as f:
@@ -25,9 +26,10 @@ def respond_to_challenge(role):
     response_path = f"data/challenge_{role}_holder/challenge_response.json"
 
     # === Step 1: Carica challenge ===
-    challenge_obj = load_json(challenge_path)
-    challenge = challenge_obj["challenge"]
-    signature_server = bytes.fromhex(challenge_obj["signature"])
+    challenge = load_json(challenge_path)
+    signature_server = bytes.fromhex(challenge["signature"])
+    # Rimuovi temporaneamente la firma per calcolare il digest corretto
+    challenge_data = {k: v for k, v in challenge.items() if k != "signature"}
 
     nonce = challenge["nonce"]
     issued_at = challenge["issued_at"]
@@ -37,7 +39,9 @@ def respond_to_challenge(role):
     ge = challenge["ge"]
 
     print(f"Verifica challenge ricevuta")
-    digest = sha256_digest(nonce, issued_at, expires_at, aud, sp, ge)
+    digest = hashlib.sha256(
+        json.dumps(challenge_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
 
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
@@ -87,7 +91,17 @@ def respond_to_challenge(role):
     expires_at_p = (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat()
 
     # === Step 7: Firma dello studente ===
-    digest_student = sha256_digest(nonce, issued_at_p, expires_at_p, server_subject, str(y_A))
+    response_data = {
+        "nonce": nonce,
+        "issued_at": issued_at_p,
+        "expires_at": expires_at_p,
+        "aud": server_subject,
+        "y_a": str(y_A),
+    }
+
+    digest_student = hashlib.sha256(
+        json.dumps(response_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
 
     with open("holder/cert/holder_private_key.pem", "rb") as f:
         sk_holder = serialization.load_pem_private_key(f.read(), password=None)
@@ -100,17 +114,12 @@ def respond_to_challenge(role):
 
     # === Step 8: Costruzione risposta ===
     response = {
-        "response": {
-            "nonce": nonce,
-            "issued_at": issued_at_p,
-            "expires_at": expires_at_p,
-            "aud": server_subject,
-            "y_a": str(y_A),
-        },
+        "response": response_data,
         "signature": signature_student.hex(),
-        "original_challenge": challenge,
-        "original_signature": challenge_obj["signature"]
+        "original_challenge": challenge_data,
+        "original_signature": challenge["signature"]
     }
+
 
     save_json(response, response_path)
     print(f"\nChallenge inviata:")

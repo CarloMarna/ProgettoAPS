@@ -5,7 +5,8 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
 from common.dh_utils import derive_shared_key
-from common.crypto_utils import sha256_digest, verify_signature
+from common.crypto_utils import  verify_signature
+import hashlib
 
 def load_json(path):
     with open(path, "r") as f:
@@ -24,13 +25,10 @@ if __name__ == "__main__":
     signature = bytes.fromhex(dh_response["signature"])
 
     # === Step 2: Calcola il digest da verificare ===
-    digest = sha256_digest(
-        response["nonce"],
-        response["issued_at"],
-        response["expires_at"],
-        response["aud"],
-        response["y_b"]
-    )
+    digest = hashlib.sha256(
+        json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).digest()
+
 
     # === Step 3: Carica il certificato pubblico del verificatore ===
     with open("verifier/cert/verifier_cert.pem", "rb") as f:

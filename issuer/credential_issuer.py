@@ -1,14 +1,15 @@
-import uuid  # per generare un ID_C univoco
-import os    # per generare salt casuale
-import json  # per serializzare attributi
-from typing import List, Tuple  # per annotazioni di tipo
+import uuid
+import os
+import json
+from typing import List, Tuple
 
-from cryptography import x509  # per gestire certificati
-from cryptography.hazmat.primitives import hashes, serialization  # per hash e chiavi
-from cryptography.hazmat.primitives.asymmetric import padding  # per padding RSA PSS
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import padding, utils
 
-from common.exercise_3 import build_merkle_tree, sha256  # Merkle Tree dal codice del professore
-from ocsp.registry import OCSPRegistry  # per la gestione della revoca
+from common.exercise_3 import build_merkle_tree
+from ocsp.registry import OCSPRegistry
+
 
 class CredentialIssuer:
     def __init__(self,
@@ -18,78 +19,51 @@ class CredentialIssuer:
                  schema_url: str,
                  revocation_registry: str):
 
-        self.issuer_dn = issuer_dn                          # Distinguished Name dell'università
-        self.schema_url = schema_url                        # URL dello schema JSON ufficiale
-        self.revocation_registry = revocation_registry      # Endpoint OCSP per verifica revoca
-        self.expiration_date = "2028-03-15T10:30:00Z"       # Scadenza della credenziale
-        self.ocsp_registry = OCSPRegistry(revocation_registry)            # Registry per OCSP
+        self.issuer_dn = issuer_dn
+        self.schema_url = schema_url
+        self.revocation_registry = revocation_registry
+        self.expiration_date = "2028-03-15T10:30:00Z"
+        self.ocsp_registry = OCSPRegistry(revocation_registry)
+        self.verification_method = cert_path  # path al certificato per verifica
 
-        # Carica il certificato dell’università per estrarre l'URL di verifica
-        with open(cert_path, "rb") as f:
-            self.verification_method = cert_path
-
-        # Carica la chiave privata dell’università da file PEM per firmare i dati
         with open(private_key_path, "rb") as f:
             self.private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     def serialize_attribute(self, attr_dict: dict) -> str:
-        # Serializza in JSON compatto e ordinato l'attributo m_i
+        # Serializza in JSON compatto e ordinato
         return json.dumps(attr_dict, separators=(",", ":"), sort_keys=True)
 
     def generate_revocation_id(self, id_c: str, salt: bytes) -> str:
-        # Calcola revocationId = H(ID_C ∥ issuer_DN ∥ salt) per unicità e non correlabilità
+        # Calcola revocationId = H(ID_C || issuer_DN || salt)
         digest = hashes.Hash(hashes.SHA256())
         digest.update(id_c.encode())
         digest.update(self.issuer_dn.encode())
         digest.update(salt)
         return digest.finalize().hex()
 
-    def sign_metadata_digest(self, data: str) -> str:
-        # Applica hash SHA-256 ai dati concatenati
-        digest = hashes.Hash(hashes.SHA256())
-        digest.update(data.encode())
-        final_digest = digest.finalize()
-
-        # Firma il digest con la chiave privata dell’università (RSA-PSS)
-        signature = self.private_key.sign(
-            final_digest,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),  # MGF1 con SHA256
-                salt_length=padding.PSS.MAX_LENGTH
-            ),
-            hashes.SHA256()
-        )
-        return signature.hex()  # ritorna la firma in formato esadecimale
-
     def issue(self, holder_dn: str, attributes: List[dict]) -> Tuple[dict, List[str], List[List[str]]]:
-        # Serializza gli attributi accademici in JSON (m_i → stringa)
+        # === Step 1: Serializza gli attributi m_i
         serialized = [self.serialize_attribute(attr) for attr in attributes]
 
-        # Costruisce il Merkle Tree e ottiene la radice
+        # === Step 2: Costruisce il Merkle Tree
         merkle_root, tree = build_merkle_tree(serialized)
 
-        # Genera un identificatore univoco per la credenziale
+        # === Step 3: Genera ID e salt per revoca
         id_c = str(uuid.uuid4())
-
-        # Genera un salt sicuro per la creazione del revocationId
         salt = os.urandom(16)
-
-        # Calcola l’identificatore di revoca crittograficamente sicuro
         revocation_id = self.generate_revocation_id(id_c, salt)
-                
-        # Carica il certificato e calcola il suo fingerprint
+
+        # === Step 4: Firma revocation_id + fingerprint del certificato
         with open(self.verification_method, "rb") as f:
             cert_bytes = f.read()
             cert = x509.load_pem_x509_certificate(cert_bytes)
             cert_fingerprint = cert.fingerprint(hashes.SHA256())
 
-        # Costruisci un digest combinato di revocation_id + fingerprint del certificato
         digest = hashes.Hash(hashes.SHA256())
         digest.update(revocation_id.encode())
         digest.update(cert_fingerprint)
         final_digest = digest.finalize()
 
-        # Firma del digest
         revocation_id_signature = self.private_key.sign(
             final_digest,
             padding.PSS(
@@ -99,16 +73,14 @@ class CredentialIssuer:
             hashes.SHA256()
         )
 
-        # Registra su OCSP
-        self.ocsp_registry.register(revocation_id, revocation_id_signature.hex(), self.verification_method)
+        # === Step 5: Registra la revoca su OCSP
+        self.ocsp_registry.register({
+            "revocation_id": revocation_id,
+            "signature": revocation_id_signature.hex(),
+            "cert_path": self.verification_method
+        })
 
-        # Costruisce la stringa da firmare con hash-then-sign
-        signed_data = f"{merkle_root}∥{id_c}∥{self.issuer_dn}∥{holder_dn}∥{self.schema_url}∥{self.expiration_date}∥{revocation_id}∥{self.revocation_registry}"
-
-        # Calcola la firma digitale dell’università
-        signature = self.sign_metadata_digest(signed_data)
-
-        # Costruisce l'intera Verifiable Credential (VC)
+        # === Step 6: Crea VC senza firma
         VC = {
             "ID_C": id_c,
             "issuer": self.issuer_dn,
@@ -119,15 +91,38 @@ class CredentialIssuer:
                 "root": merkle_root,
                 "hashAlgorithm": "SHA-256"
             },
-            "signature": {
-                "signatureValue": signature,
-                "signedData": signed_data,
-                "verificationMethod": self.verification_method
-            },
             "revocation": {
                 "revocationId": revocation_id,
                 "registry": self.revocation_registry
             }
         }
+
+        # === Step 7: Firma l'intera VC (escludendo il campo "signature")
+        vc_serialized = json.dumps(VC, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(vc_serialized)
+        final_digest = digest.finalize()
+
+        signature = self.private_key.sign(
+            final_digest,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            utils.Prehashed(hashes.SHA256())
+        )
+
+        # === Step 8: Aggiunge la firma + signedData alla VC
+        VC["signature"] = {
+            "signatureValue": signature.hex(),
+            "signedData": vc_serialized.decode("utf-8"),
+            "verificationMethod": self.verification_method
+        }
+
+        # === Step 9: Salva la VC su file
+        vc_path = os.path.join("data/issuer/VC", f"{id_c}.json")
+        os.makedirs(os.path.dirname(vc_path), exist_ok=True)
+        with open(vc_path, "w") as f:
+            json.dump(VC, f, indent=2)
 
         return VC, serialized, tree

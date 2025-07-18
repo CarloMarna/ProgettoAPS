@@ -7,8 +7,6 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 
-from common.crypto_utils import sha256_digest
-
 # === Funzione di utilità ===
 def load_student_exams(aud: str) -> list:
     with open("data/verifier/student_exam_map.json", "r") as f:
@@ -60,20 +58,24 @@ while True:
 challenge_text = f"Presenta esami {', '.join(esami)}"
 
 # === Calcola digest firmato ===
-digest = sha256_digest(
-    challenge_text,
-    nonce,
-    issued_at.isoformat(),
-    expires_at.isoformat(),
-    aud
-)
+challenge_obj_to_sign = {
+    "challenge": challenge_text,
+    "nonce": nonce,
+    "issued_at": issued_at.isoformat(),
+    "expires_at": expires_at.isoformat(),
+    "aud": aud
+}
+
+digest = hashes.Hash(hashes.SHA256())
+digest.update(json.dumps(challenge_obj_to_sign, sort_keys=True, separators=(",", ":")).encode())
+final_digest = digest.finalize()
 
 # === Firma con chiave privata del verificatore ===
 with open("verifier/cert/verifier_private_key.pem", "rb") as f:
     private_key = serialization.load_pem_private_key(f.read(), password=None)
 
 signature = private_key.sign(
-    digest,
+    final_digest,
     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
     utils.Prehashed(hashes.SHA256())
 )
