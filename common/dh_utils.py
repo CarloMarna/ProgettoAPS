@@ -1,10 +1,7 @@
 import os
 import base64
 
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.fernet import Fernet
-
+from cryptography.hazmat.primitives import hashes
 # Gruppo DH per l'issuer (es: RFC 3526 group 14 - 2048-bit MODP)
 ISSUER_P = int("""
 FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1
@@ -38,39 +35,6 @@ def generate_dh_key_pair(p, g):
     x = int.from_bytes(os.urandom(32), byteorder="big")  # Esponente privato casuale
     y = pow(g, x, p)  # Chiave pubblica DH
     return x, y
-
-
-def sign_dh_public_key(y: int, private_key) -> bytes:
-    """Firma il valore y usando la chiave privata (hash-then-sign)"""
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(str(y).encode())
-    hash_value = digest.finalize()
-
-    signature = private_key.sign(
-        hash_value,
-        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-        hashes.SHA256()
-    )
-    return signature
-
-
-def verify_dh_signature(y: int, signature: bytes, public_key) -> bool:
-    """Verifica la firma di y usando la chiave pubblica"""
-    digest = hashes.Hash(hashes.SHA256())
-    digest.update(str(y).encode())
-    hash_value = digest.finalize()
-
-    try:
-        public_key.verify(
-            signature,
-            hash_value,
-            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-            hashes.SHA256()
-        )
-        return True
-    except Exception:
-        return False
-
 
 def derive_shared_key(their_y: int, my_x: int, p) -> bytes:
     """Deriva la chiave simmetrica condivisa: K = y^x mod p"""

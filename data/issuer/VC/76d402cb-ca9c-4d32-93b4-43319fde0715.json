@@ -1,17 +1,17 @@
 {
   "ID_C": "76d402cb-ca9c-4d32-93b4-43319fde0715",
-  "expirationDate": "2028-03-15T10:30:00Z",
-  "holder": "CN=Mario Rossi, SerialNumber=123456",
   "issuer": "CN=University of Rennes, O=RENES, C=FR",
+  "holder": "CN=Mario Rossi, SerialNumber=123456",
+  "expirationDate": "2028-03-15T10:30:00Z",
+  "schema": "https://schemas.rennes.edu/credential/v1",
   "merkle": {
-    "hashAlgorithm": "SHA-256",
-    "root": "1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c"
+    "root": "1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c",
+    "hashAlgorithm": "SHA-256"
   },
   "revocation": {
-    "registry": "data/ocsp/ocsp_registry.json",
-    "revocationId": "ee67f220a597b6327f55692189560be394f5d7f9d26510fd0597b1072f2e32ff"
+    "revocationId": "ee67f220a597b6327f55692189560be394f5d7f9d26510fd0597b1072f2e32ff",
+    "registry": "data/ocsp/ocsp_registry.json"
   },
-  "schema": "https://schemas.rennes.edu/credential/v1",
   "signature": {
     "signatureValue": "51c8733ad82ddd7b9c6eca0b28166fc428e24cdee0204fe0426f159509d80d801884f03f10d8e877b38bd94025811f1b9de6dd17007f0553f292e78ed1a334d786da4689d87084e5bf6fb06080b388bce4120eb40d41717a338dd7f06b6438e33616dcdbdfd47b8ee3a79ff3a2b2de0ce04e0bf8da19613968e5edc440e9d2bb9ee77624af3e84fa620b102fd77959b350d4f631864639e95fb9e0044827c8b06cac682b7c446017b98191a51ebe89d23cc2faf86d537be122104a6e46541f97859b5145aeb49068ebbc3be8071b8fe62ceb85fdf6dade732353bf26975e4cf022522c98bc95ed4199fd91f54b8b4ab362b8e487378463c509a8b1ae2344f1c3",
     "signedData": "{\"ID_C\":\"76d402cb-ca9c-4d32-93b4-43319fde0715\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"ee67f220a597b6327f55692189560be394f5d7f9d26510fd0597b1072f2e32ff\"},\"schema\":\"https://schemas.rennes.edu/credential/v1\"}",
