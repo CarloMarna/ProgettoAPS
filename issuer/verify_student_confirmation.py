@@ -62,7 +62,7 @@ if nonce in used_nonces:
 # === Step 5: Registra il nonce come usato definitivamente ===
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
-print(" Nonce2 corretto.")
+print(" Nonce corretto.")
 # === Step 6: Verifica aud ===
 with open("issuer/cert/issuer_cert.pem", "rb") as f:
     issuer_cert = x509.load_pem_x509_certificate(f.read())

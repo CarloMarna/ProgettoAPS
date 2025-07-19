@@ -60,7 +60,7 @@ if nonce in used_nonces:
     sys.exit(1)
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
-print(" Nonce2 verificato con Successo.")
+print(" Nonce verificato con Successo.")
 
 # === Step 4: Verifica audience ===
 my_identity = "CN=Mario Rossi, SerialNumber=123456"

@@ -23,16 +23,12 @@ class OCSPRegistry:
     def _save(self):
         with open(self.filepath, "w") as f:
             json.dump(self.db, f, indent=2)
+            
     def register(self, request: dict):
         """
         Registra un nuovo revocation ID solo se la firma è valida.
         Il digest firmato è: SHA256(revocation_id || fingerprint del certificato)
         """
-        from cryptography import x509
-        from cryptography.hazmat.primitives import hashes, serialization
-        from cryptography.hazmat.primitives.asymmetric import padding
-        from datetime import datetime
-
         revocation_id = request["revocation_id"]
         signature_hex = request["signature"]
         cert_path = request["cert_path"]

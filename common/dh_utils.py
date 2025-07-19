@@ -29,13 +29,29 @@ DH_PARAMS = {
     "verifier": {"p": VERIFIER_P, "g": VERIFIER_G}
 }
 
+BENCHMARK_DH = True  
+import time
 
+def benchmark(func):
+    def wrapper(*args, **kwargs):
+        if BENCHMARK_DH:
+            start = time.time()
+            result = func(*args, **kwargs)
+            elapsed = (time.time() - start) * 1000
+            print(f"[BENCH] {func.__name__} eseguita in {elapsed:.2f} ms")
+            return result
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+@benchmark
 def generate_dh_key_pair(p, g):
     """Genera una coppia (x, y) per Diffie-Hellman: x privato, y=g^x mod p"""
     x = int.from_bytes(os.urandom(32), byteorder="big") 
     y = pow(g, x, p) 
     return x, y
-
+    
+@benchmark
 def derive_shared_key(their_y: int, my_x: int, p) -> bytes:
     """Deriva la chiave simmetrica condivisa: K = y^x mod p"""
     if not (1 < their_y < p - 1):
