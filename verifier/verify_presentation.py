@@ -9,7 +9,7 @@ from ocsp.registry import OCSPRegistry
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 import hashlib
-
+from cryptography.x509.oid import NameOID
 
 # === CONFIG ===
 P_PROT_PATH = "data/challenge_verifier_holder/P_prot_ciphered.enc"
@@ -104,6 +104,14 @@ print(" Stato OCSP: good")
 holder_cert_path = "holder/cert/holder_cert.pem"
 holder_cert = x509.load_pem_x509_certificate(open(holder_cert_path, "rb").read())
 pk_holder = holder_cert.public_key()
+# === Step 5.1: Verifica corrispondenza holder in vc con holder che sta presentando
+vc_holder = VC["holder"]
+vc_cn = next((x.split("=")[1] for x in vc_holder.split(",") if x.startswith("CN=")), None)
+cert_cn = holder_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+if vc_cn != cert_cn:
+    print(" Mismatch sul CN tra VC e certificato.")
+    exit(1)
+print(" CN del holder corrispondente.")
 
 unsigned = {k: P_prot[k] for k in P_prot if k not in ("signature_holder", "Credenziale")}
 serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True).encode()
