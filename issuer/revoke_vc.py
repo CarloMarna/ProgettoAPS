@@ -2,7 +2,7 @@ import json
 import os
 from ocsp.registry import OCSPRegistry
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 
 REVOCATION_REGISTRY_PATH = "data/ocsp/ocsp_registry.json"
@@ -10,41 +10,32 @@ VC_DIRECTORY = "data/issuer/VC"
 PRIVATE_KEY_PATH = "issuer/cert/issuer_private_key.pem"
 CERT_PATH = "issuer/cert/issuer_cert.pem"
 
-def carica_vc_disponibili():
-    vcs = []
-    if not os.path.exists(VC_DIRECTORY):
-        print(f"Nessuna VC trovata in {VC_DIRECTORY}")
-        return vcs
+def carica_ultima_vc():
+    vc_files = [
+        os.path.join(VC_DIRECTORY, file)
+        for file in os.listdir(VC_DIRECTORY)
+        if file.endswith(".json")
+    ]
 
-    for file in os.listdir(VC_DIRECTORY):
-        if file.endswith(".json"):
-            with open(os.path.join(VC_DIRECTORY, file), "r") as f:
-                data = json.load(f)
-                vc = data.get("VC", data)
-                try:
-                    vcs.append((
-                        file,
-                        vc["ID_C"],
-                        vc["revocation"]["revocationId"],
-                        vc.get("holder", "N/A")
-                    ))
-                except KeyError:
-                    print(f"  File {file} non contiene VC valida (ID_C o revocationId mancante)")
-    return vcs
-
-def seleziona_vc(vcs):
-    print("\nCredenziali disponibili per la revoca:")
-    for idx, (_, vc_id, _, holder) in enumerate(vcs):
-        print(f"{idx + 1}. {vc_id} - {holder}")
-    scelta = input("Seleziona il numero della VC da revocare: ")
-    try:
-        index = int(scelta) - 1
-        if index < 0 or index >= len(vcs):
-            raise ValueError
-        return vcs[index]
-    except ValueError:
-        print("Scelta non valida.")
+    if not vc_files:
         return None
+
+    vc_files.sort(key=os.path.getmtime, reverse=True)
+    latest_file = vc_files[0]
+
+    with open(latest_file, "r") as f:
+        data = json.load(f)
+        vc = data.get("VC", data)
+        try:
+            return (
+                os.path.basename(latest_file),
+                vc["ID_C"],
+                vc["revocation"]["revocationId"],
+                vc.get("holder", "N/A")
+            )
+        except KeyError:
+            print(f"File {latest_file} non contiene VC valida.")
+            return None
 
 def firma_revoca(revocation_id, reason, cert_path, private_key_path):
     message_dict = {
@@ -68,14 +59,7 @@ def firma_revoca(revocation_id, reason, cert_path, private_key_path):
     return signature.hex()
 
 if __name__ == "__main__":
-    vcs = carica_vc_disponibili()
-    if not vcs:
-        print(" Nessuna Verifiable Credential disponibile per la revoca.")
-        exit(1)
-
-    selected_vc = seleziona_vc(vcs)
-    if not selected_vc:
-        exit(1)
+    selected_vc = carica_ultima_vc()
 
     _, vc_id, revocation_id, holder = selected_vc
     motivo = input("Motivo della revoca (invio per 'unspecified'): ") or "unspecified"

@@ -33,6 +33,7 @@ if __name__ == "__main__":
         )
         t_decrypt = (time.time() - start) * 1000
         print(f"[TEMPO] Decifratura completata in {t_decrypt:.2f} ms")
+        
         # === Step 2: Ispezione del payload ===
         VC = payload["VC"]
         attributes = payload["attributes"]

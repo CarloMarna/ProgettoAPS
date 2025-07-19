@@ -39,8 +39,6 @@ class CredentialHolder:
 
         issuer_dn = VC["issuer"]
         issuer_id = issuer_dn.lower().replace("cn=", "").replace(",", "").replace(" ", "-")
-        wallet_path = os.path.join("data/holder/wallet", issuer_id)
-        os.makedirs(wallet_path, exist_ok=True)
 
         # Step 1: verifica firma dell’università
         if not verify_signature_VC(VC):
@@ -74,6 +72,9 @@ class CredentialHolder:
         hmac_value = self.compute_local_hmac(VC, attributes, proofs)
         print(" HMAC locale calcolato e pronto per la verifica futura.")
     
+        wallet_path = os.path.join("data/holder/wallet", issuer_id + "_id_"+VC["ID_C"][:5])
+        os.makedirs(wallet_path, exist_ok=True)
+
         with open(os.path.join(wallet_path, "valid_vc.json"), "w") as f:
             json.dump(VC, f, indent=2)
 
