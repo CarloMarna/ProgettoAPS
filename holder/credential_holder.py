@@ -8,7 +8,7 @@ from common.crypto_utils import verify_signature_VC
 from typing import List
 from cryptography.hazmat.primitives.asymmetric import utils
 import copy
-
+import time
 
 class CredentialHolder:
     def __init__(self, private_key_path: str, cert_path: str):
@@ -118,6 +118,7 @@ class CredentialHolder:
 
             conferma = input("Vuoi procedere con la creazione del certificato? (s/n): ").lower()
             if conferma == "s":
+                start_time = time.perf_counter()
                 break
             else:
                 print("Ripeti la selezione degli esami.\n")
@@ -155,6 +156,8 @@ class CredentialHolder:
         )
 
         P_prot["signature_holder"] = signature.hex()
+        t_elapsed = (time.perf_counter() - start_time) * 1000
+        print(f"[TEMPO] Costruzione presentazione: {t_elapsed:.2f} ms")
         return P_prot
 
 

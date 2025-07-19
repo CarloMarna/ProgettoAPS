@@ -88,7 +88,7 @@ try:
     )
     print(" Firma OCSP verificata correttamente.")
     t_ocsp = (time.perf_counter() - start) * 1000
-    print(f"[Tempo] Verifica firma OCSP: {t_ocsp:.2f} ms")
+    print(f" [TEMPO] Verifica firma OCSP: {t_ocsp:.2f} ms")
 except Exception as e:
     print(" Errore verifica firma OCSP:", e)
     exit(1)

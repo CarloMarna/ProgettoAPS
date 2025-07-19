@@ -149,7 +149,6 @@ if __name__ == "__main__":
     nonce = challenge_obj["nonce"]
     issued_at = challenge_obj["issued_at"]
     expires_at = challenge_obj["expires_at"]
-    start = time.time()
     P_prot = holder.prepare_presentation(
         vc=VC,
         vc_hmac=vc_hmac,
@@ -163,16 +162,14 @@ if __name__ == "__main__":
     if P_prot is None:
         print("Preparazione della presentazione fallita.")
         exit(1)
-    t_presentation = (time.time() - start) * 1000
-    print(f"[TEMPO] Preparazione presentazione: {t_presentation:.2f} ms")    
     # === Step 6: Cifra P_prot con R ===
     R = session_key_holder
     fernet_session = Fernet(R)
 
     P_prot_bytes = json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode()
-    start = time.time()
+    start = time.perf_counter()
     encrypted_presentation = fernet_session.encrypt(P_prot_bytes)
-    t_encryption = (time.time() - start) * 1000
+    t_encryption = (time.perf_counter() - start) * 1000
     size_kb = len(encrypted_presentation) / 1024
     print(f"[TEMPO] Cifratura presentazione: {t_encryption:.2f} ms")
     print(f"[DIMENSIONE] Dimensione presentazione cifrata: {size_kb:.2f} KB")
