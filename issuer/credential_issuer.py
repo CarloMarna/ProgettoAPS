@@ -24,17 +24,15 @@ class CredentialIssuer:
         self.revocation_registry = revocation_registry
         self.expiration_date = "2028-03-15T10:30:00Z"
         self.ocsp_registry = OCSPRegistry(revocation_registry)
-        self.verification_method = cert_path  # path al certificato per verifica
+        self.verification_method = cert_path  
 
         with open(private_key_path, "rb") as f:
             self.private_key = serialization.load_pem_private_key(f.read(), password=None)
 
     def serialize_attribute(self, attr_dict: dict) -> str:
-        # Serializza in JSON compatto e ordinato
         return json.dumps(attr_dict, separators=(",", ":"), sort_keys=True)
 
     def generate_revocation_id(self, id_c: str, salt: bytes) -> str:
-        # Calcola revocationId = H(ID_C || issuer_DN || salt)
         digest = hashes.Hash(hashes.SHA256())
         digest.update(id_c.encode())
         digest.update(self.issuer_dn.encode())
@@ -72,13 +70,15 @@ class CredentialIssuer:
             ),
             hashes.SHA256()
         )
-
-        # === Step 5: Registra la revoca su OCSP
-        self.ocsp_registry.register({
+        
+        message = {
             "revocation_id": revocation_id,
             "signature": revocation_id_signature.hex(),
             "cert_path": self.verification_method
-        })
+        }
+
+        # === Step 5: Registra la revoca su OCSP
+        self.ocsp_registry.register(message)
 
         # === Step 6: Crea VC senza firma
         VC = {

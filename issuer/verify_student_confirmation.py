@@ -31,6 +31,7 @@ digest = hashlib.sha256(
 with open("holder/cert/holder_cert.pem", "rb") as f:
     holder_cert = x509.load_pem_x509_certificate(f.read())
     pk_holder = holder_cert.public_key()
+    
 print("Verifica challange ricevuta:")
 if verify_signature(digest, signature, pk_holder):
     print(" Firma valida")

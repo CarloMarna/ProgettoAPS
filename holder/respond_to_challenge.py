@@ -39,9 +39,7 @@ def respond_to_challenge(role):
     ge = challenge["ge"]
 
     print(f"Verifica challenge ricevuta")
-    digest = hashlib.sha256(
-        json.dumps(challenge_data, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    ).digest()
+    digest = hashlib.sha256(json.dumps(challenge_data, sort_keys=True, separators=(",", ":")).encode("utf-8")).digest()
 
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
