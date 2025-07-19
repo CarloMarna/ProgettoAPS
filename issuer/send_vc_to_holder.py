@@ -47,7 +47,7 @@ if __name__ == "__main__":
     start = time.time()
     vc, serialized_attrs, tree = issuer.issue(holder_dn, attributes)
     t_issue = (time.time() - start) * 1000
-    print(f"\n[Tempo] Emissione VC: {t_issue:.2f} ms")
+    print(f"\n[TEMPO] Emissione VC: {t_issue:.2f} ms")
 
     print("\nVerifiable Credential firmata correttamente.")
     print(f" ID credenziale: {vc['ID_C']}")
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     start = time.time()
     proofs_with_index = compute_merkle_proofs(tree[0], tree)
     t_merkle = (time.time() - start) * 1000
-    print(f" Merkle tree costruito in {t_merkle:.2f} ms con {len(proofs_with_index)} prove.")   
+    print(f" [TEMPO] Merkle tree costruito in {t_merkle:.2f} ms con {len(proofs_with_index)} prove.")   
     print(f" Merkle tree costruito e {len(proofs_with_index)} prove generate.")
 
     # === Step 6: Costruzione del payload cifrato ===
