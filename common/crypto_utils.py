@@ -22,9 +22,9 @@ def verify_signature_VC(vc: dict) -> bool:
     """Verifica la firma hash-then-sign dell’università"""
     signed_data = vc["signature"]["signedData"]
     signature = bytes.fromhex(vc["signature"]["signatureValue"])
-
+    cert_path = vc["signature"]["verificationMethod"]
     try:
-        with open("issuer/cert/issuer_cert.pem", "rb") as f:
+        with open(cert_path, "rb") as f:
             cert = x509.load_pem_x509_certificate(f.read())
             pk_issuer = cert.public_key()
 
@@ -33,7 +33,7 @@ def verify_signature_VC(vc: dict) -> bool:
         digest.update(signed_data.encode("utf-8"))
         final_digest = digest.finalize()
 
-        # Verifica la firma (digest pre-calcolato)
+        # Verifica la firma 
         pk_issuer.verify(
             signature,
             final_digest,
@@ -41,7 +41,7 @@ def verify_signature_VC(vc: dict) -> bool:
                 mgf=padding.MGF1(hashes.SHA256()),
                 salt_length=padding.PSS.MAX_LENGTH
             ),
-            utils.Prehashed(hashes.SHA256())  # ← IMPORTANTE
+            utils.Prehashed(hashes.SHA256())  
         )
         return True
     except Exception as e:

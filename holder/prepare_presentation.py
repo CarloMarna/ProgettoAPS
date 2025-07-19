@@ -97,6 +97,7 @@ if __name__ == "__main__":
         print(" Challenge scaduta o non ancora valida.")
         exit(1)
     print(" Challenge valida e firmata correttamente.")
+
     #Step 3.1 Verifica nonce
     nonce = challenge_obj["nonce"]
     nonce_file = "data/holder/used_nonces.txt"
@@ -110,12 +111,14 @@ if __name__ == "__main__":
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
     print(" Nonce verificato con successo")
+
     # === Step 3.2: Verifica audience ===
     my_identity = "CN=Mario Rossi, SerialNumber=123456"
     if challenge_obj["aud"]!= my_identity:
         print(" Audience non corrisponde.")
         sys.exit(1)
     print(" Audience corretta.")
+    
     # === Step 4: Carica VC, attributi e proof ===
     certs = list_certifications()
 

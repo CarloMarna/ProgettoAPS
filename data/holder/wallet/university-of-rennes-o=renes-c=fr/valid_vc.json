@@ -1,5 +1,13 @@
 {
+<<<<<<< HEAD
   "ID_C": "f58114f5-3eb9-4027-889d-91bc7d409ee2",
+=======
+<<<<<<< HEAD
+  "ID_C": "923ef997-9d3f-4a07-b546-f72584735be7",
+=======
+  "ID_C": "7b523514-7236-4592-b331-ff96eb7e7323",
+>>>>>>> 63fbb13f84cd70c86936bb26775af6972b11c445
+>>>>>>> da315196f291651ba0594adc20ac9e2bbdc7aa62
   "expirationDate": "2028-03-15T10:30:00Z",
   "holder": "CN=Mario Rossi, SerialNumber=123456",
   "issuer": "CN=University of Rennes, O=RENES, C=FR",
@@ -9,12 +17,30 @@
   },
   "revocation": {
     "registry": "data/ocsp/ocsp_registry.json",
+<<<<<<< HEAD
     "revocationId": "6fa0a17e17ac4ceca087c4136a4d2a255e7ae7097e939f84d19130fd6d8df453"
   },
   "schema": "data/issuer/schemes/scheme.json",
   "signature": {
     "signatureValue": "a7b4e78e3dcfd6b89edd445a1362bc950d9f026954a8a56294f0f00c1bf7149d9cd7b1b06b18cb15f114280a5cabe6e76cd09e76b9d2170a2cde2022ff58a3fe92c1a0ceb57ca1c1a46efd6fbc7604ef4fff2adf0f812cbcc97de1bb1187456aae4fcc368f6e5b81de2c658b9c780150beb3ce00194c9563ab733f094d43e0651208dea2656e1862b444e8fb0cc563800f091f3df4ad7fe1515e1f6f0cb80a2323ea0337704fa8cf0dc863de07ac1a49726441ce1caeea5f5f926405a49154c4ffdc10a4523eca6724af0606e78b121e23c12bc5daf8b05368a9c915183c92d3521672a995f94193eb8047162f94d394b259bcb8b07d8e78cf1cf680e000c55a",
     "signedData": "{\"ID_C\":\"f58114f5-3eb9-4027-889d-91bc7d409ee2\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"6fa0a17e17ac4ceca087c4136a4d2a255e7ae7097e939f84d19130fd6d8df453\"},\"schema\":\"data/issuer/schemes/scheme.json\"}",
+=======
+<<<<<<< HEAD
+    "revocationId": "b874b0bed707ca19651ec7eb508127950f8d370223f80ecc7f44bea1ccb86e9e"
+  },
+  "schema": "data/issuer/schemes/scheme.json",
+  "signature": {
+    "signatureValue": "640a5dfbdbd4ef0bdda0f5a139b63c3a691f760c83d43026a1f45ef901fdcad050c70bf776b45e2307d4f8a52554bc1a60352a80083da36969dac19210b2aa54b85c156ee2a102e451bf6b5b5c906d818029f2d288e08205f48d66432a7a08b16ad5f3df0ddb8fae436223ed93b007f2f73498b3190e5679c3015c232ff793d8b48e0f2007366c7ec53c54dc6fc33b95d36fd1826670f3c46a72da7359ed855c1df1f6244ff80f1f9739c127e720c51b2eb905bfcfa2812237c64803ae1cea43549c281b01cc9c986ed49b56df28770cae8ef51b047c629c9a3018c43840b566b2752cc2bdee3647250e2721c6ccdcf3908b6f90f882be8f1799d03a3e7e17dc",
+    "signedData": "{\"ID_C\":\"923ef997-9d3f-4a07-b546-f72584735be7\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"b874b0bed707ca19651ec7eb508127950f8d370223f80ecc7f44bea1ccb86e9e\"},\"schema\":\"data/issuer/schemes/scheme.json\"}",
+=======
+    "revocationId": "73ff95e84ecf9063d087fab1cc4b508ace0613134a839c273465cf655e3d013e"
+  },
+  "schema": "data/issuer/schemes/scheme.json",
+  "signature": {
+    "signatureValue": "6d5cbd587af2f76934477e445c2214d09f9d00f90c9032c0059937947dda957d3b25c83ce2ecbd3b01a15ed1f7d67b6ed955fa5d338a5051c10c36829dd67dc9fc716cbf3d819fb1f5f66052774e6cee875a01764123eb50b5cff183204e6ceb5b47a4b48d9accfa59c953fbe631bf6d82ca7e47780602979230311ca2dd3617b618f0b5a2c25f0e772a140ab91f3c640694470c51f46854418cb800c63216185bf2750ab2434a076661f6b201c109549b7d1a406dc7f35f9165e31df733ffeea271615364b8a3f33734ba4a6cb6e94fdfa26f18220778adc9bfdf17cfe66c844f36e59b3453ae36a1b438859d25a3522bd6d24cc591122acd54c363d6bb7081",
+    "signedData": "{\"ID_C\":\"7b523514-7236-4592-b331-ff96eb7e7323\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"73ff95e84ecf9063d087fab1cc4b508ace0613134a839c273465cf655e3d013e\"},\"schema\":\"data/issuer/schemes/scheme.json\"}",
+>>>>>>> 63fbb13f84cd70c86936bb26775af6972b11c445
+>>>>>>> da315196f291651ba0594adc20ac9e2bbdc7aa62
     "verificationMethod": "issuer/cert/issuer_cert.pem"
   }
 }
