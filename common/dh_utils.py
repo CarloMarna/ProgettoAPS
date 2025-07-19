@@ -38,7 +38,7 @@ def benchmark(func):
             start = time.perf_counter()
             result = func(*args, **kwargs)
             elapsed = (time.perf_counter() - start) * 1000
-            print(f"[BENCH] {func.__name__} eseguita in {elapsed:.2f} ms")
+            print(f" [TEMPO] {func.__name__} eseguita in {elapsed:.2f} ms")
             return result
         else:
             return func(*args, **kwargs)
