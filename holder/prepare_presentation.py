@@ -96,7 +96,19 @@ if __name__ == "__main__":
         print(" Challenge scaduta o non ancora valida.")
         exit(1)
     print(" Challenge valida e firmata correttamente.")
-
+    #Step 3.1 Verifica nonce
+    nonce = challenge_obj["nonce"]
+    nonce_file = "data/holder/used_nonces.txt"
+    used_nonces = set()
+    if os.path.exists(nonce_file):
+        with open(nonce_file, "r") as f:
+            used_nonces = set(line.strip() for line in f)
+    if nonce in used_nonces:
+        print(" Nonce già usato.")
+        sys.exit(1)
+    with open(nonce_file, "a") as f:
+        f.write(nonce + "\n")
+    print("nonce verificato con successo")
     # === Step 4: Carica VC, attributi e proof ===
     certs = list_certifications()
 

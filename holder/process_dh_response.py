@@ -7,6 +7,8 @@ from cryptography.hazmat.primitives.asymmetric import padding, utils
 from common.dh_utils import derive_shared_key
 from common.crypto_utils import  verify_signature
 import hashlib
+import os
+import sys
 
 def load_json(path):
     with open(path, "r") as f:
@@ -52,7 +54,20 @@ if __name__ == "__main__":
         exit(1)
     else:
         print(" Finestra temporale valida.")
-
+    #Step 5.1 Verifica nonce
+    nonce = response["nonce"]
+    nonce_file = "data/holder/used_nonces.txt"
+    used_nonces = set()
+    if os.path.exists(nonce_file):
+        with open(nonce_file, "r") as f:
+            used_nonces = set(line.strip() for line in f)
+    if nonce in used_nonces:
+        print(" Nonce già usato.")
+        sys.exit(1)
+    with open(nonce_file, "a") as f:
+        f.write(nonce + "\n")
+    print("nonce verificato con successo")
+    
     # === Step 6: Deriva chiave di sessione DH ===
     p_hex = load_json("data/challenge_verifier_holder/challenge_response.json")["original_challenge"]["sp"]
     p = int(p_hex, 16)
