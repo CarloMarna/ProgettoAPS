@@ -164,7 +164,7 @@ if __name__ == "__main__":
         print("Preparazione della presentazione fallita.")
         exit(1)
     t_presentation = (time.time() - start) * 1000
-    print(f"[Tempo] Preparazione presentazione: {t_presentation:.2f} ms")    
+    print(f"[TEMPO] Preparazione presentazione: {t_presentation:.2f} ms")    
     # === Step 6: Cifra P_prot con R ===
     R = session_key_holder
     fernet_session = Fernet(R)
@@ -174,8 +174,8 @@ if __name__ == "__main__":
     encrypted_presentation = fernet_session.encrypt(P_prot_bytes)
     t_encryption = (time.time() - start) * 1000
     size_kb = len(encrypted_presentation) / 1024
-    print(f"[Tempo] Cifratura presentazione: {t_encryption:.2f} ms")
-    print(f"[Info] Dimensione presentazione cifrata: {size_kb:.2f} KB")
+    print(f"[TEMPO] Cifratura presentazione: {t_encryption:.2f} ms")
+    print(f"[DIMENSIONE] Dimensione presentazione cifrata: {size_kb:.2f} KB")
     with open("data/challenge_verifier_holder/P_prot_ciphered.enc", "wb") as f:
         f.write(encrypted_presentation)
 

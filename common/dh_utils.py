@@ -35,8 +35,13 @@ def benchmark(func):
         if BENCHMARK_DH:
             start = time.time()
             result = func(*args, **kwargs)
+<<<<<<< HEAD
             elapsed = (time.time() - start) * 1000
             print(f"[BENCH] {func.__name__} eseguita in {elapsed:.2f} ms")
+=======
+            elapsed = (time.perf_counter() - start) * 1000
+            print(f" [TEMPO] {func.__name__} eseguita in {elapsed:.2f} ms")
+>>>>>>> 63fbb13f84cd70c86936bb26775af6972b11c445
             return result
         else:
             return func(*args, **kwargs)

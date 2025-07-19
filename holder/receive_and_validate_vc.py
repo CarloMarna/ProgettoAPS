@@ -23,7 +23,7 @@ if __name__ == "__main__":
         encrypted_path = "data/challenge_issuer_holder/vc_payload.enc"
         key_path = "data/challenge_issuer_holder/key/session_key.shared"
         size_kb = os.path.getsize(encrypted_path) / 1024
-        print(f"\n[Info] Dimensione del payload cifrato ricevuto: {size_kb:.2f} KB")
+        print(f"\n[DIMENSIONE] Dimensione del payload cifrato ricevuto: {size_kb:.2f} KB")
         start = time.time()
         
         # === Step 1: Caricamento e decifratura ===
@@ -32,7 +32,7 @@ if __name__ == "__main__":
             path_key="data/challenge_issuer_holder/key/session_key.shared"
         )
         t_decrypt = (time.time() - start) * 1000
-        print(f"[Tempo] Decifratura completata in {t_decrypt:.2f} ms")
+        print(f"[TEMPO] Decifratura completata in {t_decrypt:.2f} ms")
         # === Step 2: Ispezione del payload ===
         VC = payload["VC"]
         attributes = payload["attributes"]
