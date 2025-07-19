@@ -69,14 +69,7 @@ def process_response(role):
         f.write(nonce + "\n")
 
     print(" Nonce corretto")
-<<<<<<< HEAD
     nonce = os.urandom(32).hex()
-=======
-    print(" Genero nuovo nonce")
-    nonce = os.urandom(32).hex()
-    
-
->>>>>>> e737c5e4f507355b7f262bd19f60e92e80bffa6d
     # === Step 4: Verifica firma dello studente ===
     digest_student = hashlib.sha256(
         json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8")
