@@ -46,7 +46,8 @@ if not (datetime.fromisoformat(issued_at) <= now <= datetime.fromisoformat(expir
 print(" Finestra temporale valida.")
 
 # === Step 4: Verifica che il nonce sia coerente e non riutilizzato ===
-nonce_file = "data/issuer/confirmed_nonces.txt"
+#nonce_file = "data/issuer/confirmed_nonces.txt"
+nonce_file = "data/issuer/used_nonces_issuer.txt"
 used_nonces = set()
 if os.path.exists(nonce_file):
     with open(nonce_file, "r") as f:
@@ -60,6 +61,7 @@ if nonce in used_nonces:
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
 print("\nNonce2 registrato come usato.")
+
 # === Step 6: Calcola chiave di sessione: K_session = y_A^x_B mod p ===
 with open("data/challenge_issuer_holder/challenge_response.json", "r") as f:
     response = json.load(f)
