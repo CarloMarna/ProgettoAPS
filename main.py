@@ -44,5 +44,4 @@ if __name__ == "__main__":
     # === 5. Simula Revoca
     run("5.1 Issuer revoca VC", "python -m issuer.revoke_vc")
     run("4. Verifier verifica presentazione", "python -m verifier.verify_presentation")
-    
     print("\nTutto il flusso è stato eseguito con successo.")

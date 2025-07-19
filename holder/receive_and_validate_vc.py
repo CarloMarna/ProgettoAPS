@@ -55,7 +55,6 @@ if __name__ == "__main__":
 
         # === Step 4: Carica lo schema e verifica la VC ===
         print("\nAvvio della verifica completa della credenziale...")
-        schema = holder.load_default_schema()
         if holder.verify_credential(payload):
             print("La credenziale è valida e archiviata nel wallet.")
         else:

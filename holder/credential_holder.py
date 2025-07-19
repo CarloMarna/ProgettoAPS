@@ -49,7 +49,9 @@ class CredentialHolder:
 
         # Step 2: validazione schema JSON
         try:
-            schema = self.load_default_schema()
+            schema_path = VC["schema"] 
+            with open(schema_path, "r") as f:
+                schema = json.load(f)
             self.validate_schema(attributes, schema)
         except Exception as e:
             print(f" Errore nella validazione schema: {e}")
@@ -170,54 +172,8 @@ class CredentialHolder:
         P_prot["signature_holder"] = signature.hex()
         return P_prot
 
-#QUESTI NON DEVONO STARE QUI
-    @staticmethod
-    def load_default_schema() -> dict:
-        """Restituisce lo schema JSON ufficiale degli attributi accademici"""
-        return {
-            "type": "object",
-            "required": [
-                "nome_esame", "cod_corso", "CFU", "voto", "data",
-                "anno_accademico", "tipo_esame", "docente", "lingua"
-            ],
-            "properties": {
-                "nome_esame": {"type": "string"},
-                "cod_corso": {
-                    "type": "string",
-                    "pattern": "^[A-Za-z0-9_\\-]{2,10}$"
-                },
-                "CFU": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 30
-                },
-                "voto": {
-                    "type": "string",
-                    "pattern": "^(18|19|2[0-9]|30|30L)$"
-                },
-                "data": {
-                    "type": "string",
-                    "format": "date"
-                },
-                "anno_accademico": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}/[0-9]{4}$"
-                },
-                "docente": {"type": "string"},
-                "lingua": {
-                    "type": "string",
-                    "enum": ["IT", "EN", "FR", "DE", "ES"]
-                },
-                "tipo_esame": {
-                    "type": "string",
-                    "enum": ["scritto", "orale", "progetto", "misto"]
-                }
-            },
-            "additionalProperties": False
-        }
 
-    @staticmethod
-    def validate_schema(attributes: List[str], json_schema: dict) -> None:
+    def validate_schema(self, attributes: List[str], json_schema: dict) -> None:
         """Verifica conformità di ciascun attributo allo schema JSON"""
         import jsonschema
         for i, attr_json in enumerate(attributes):

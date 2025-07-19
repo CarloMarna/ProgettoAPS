@@ -40,7 +40,7 @@ if __name__ == "__main__":
         issuer_dn="CN=University of Rennes, O=RENES, C=FR",
         cert_path="issuer/cert/issuer_cert.pem",
         private_key_path="issuer/cert/issuer_private_key.pem",
-        schema_url="https://schemas.rennes.edu/credential/v1",
+        schema_url="data/issuer/schemes/scheme.json",
         revocation_registry="data/ocsp/ocsp_registry.json"
     )
 
