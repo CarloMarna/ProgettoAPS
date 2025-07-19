@@ -1,17 +1,17 @@
 {
   "ID_C": "eb597f02-aa3f-402e-9874-fd91b3d07171",
-  "expirationDate": "2028-03-15T10:30:00Z",
-  "holder": "CN=Mario Rossi, SerialNumber=123456",
   "issuer": "CN=University of Rennes, O=RENES, C=FR",
+  "holder": "CN=Mario Rossi, SerialNumber=123456",
+  "expirationDate": "2028-03-15T10:30:00Z",
+  "schema": "data/issuer/schemes/scheme.json",
   "merkle": {
-    "hashAlgorithm": "SHA-256",
-    "root": "1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c"
+    "root": "1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c",
+    "hashAlgorithm": "SHA-256"
   },
   "revocation": {
-    "registry": "data/ocsp/ocsp_registry.json",
-    "revocationId": "7d29fad56c153d54309bf3f3eb750988d845e441a0f9737062864cb645dea5ef"
+    "revocationId": "7d29fad56c153d54309bf3f3eb750988d845e441a0f9737062864cb645dea5ef",
+    "registry": "data/ocsp/ocsp_registry.json"
   },
-  "schema": "data/issuer/schemes/scheme.json",
   "signature": {
     "signatureValue": "856951dfd98423d1801c99b73a6ae0e69560f4fd486f460574b5c68a47227a8afeb591fbc53761c4296f65456dfd39630257af538b0b6d9bb0a464ba4c6473c14e1076686523811224f98d108d476b4f65454e32d6701eb8776eecb7d7802a7e62b653692fcfed8543651b8f13ce80d0ea5b4bef93a4ae40efcf22154a88198dd636628ae7c9800c14e62bdf5a73e7304f428e22436491df96f66cc8d3eb0f641187097186bb7fe1a4a7c1f66b8ff73f01dd1ad472e2ad517551d6e826b0eccf395098cad0599f385338ec7e9829b24a342e3f606ea07c1e4802011a606268c0125b1a8351816f3ba9d1148b454a719a84d071e978840293035fc6b35f196167",
     "signedData": "{\"ID_C\":\"eb597f02-aa3f-402e-9874-fd91b3d07171\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"1075774acfde4d510761adf7a4b018d5f6b51aba87a622225209790ff1c12b3c\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"7d29fad56c153d54309bf3f3eb750988d845e441a0f9737062864cb645dea5ef\"},\"schema\":\"data/issuer/schemes/scheme.json\"}",

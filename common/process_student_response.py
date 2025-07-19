@@ -44,6 +44,7 @@ def process_response(role):
     with open(cert_path, "rb") as f:
         cert = x509.load_pem_x509_certificate(f.read())
         pk_server = cert.public_key()
+        server_subject = cert.subject.rfc4514_string()
 
     print("Verifica challenge ricevuta")
     if not verify_signature(digest_challenge, signature_challenge, pk_server):
@@ -66,8 +67,11 @@ def process_response(role):
     with open(nonce_log, "a") as f:
         f.write(nonce + "\n")
 
-    print(" Challenge attualmente valida.")
-
+    print(" Nonce corretto")
+    #
+    print(" Genero nuovo nonce")
+    nonce = os.urandom(32).hex()
+    #
     # === Step 4: Verifica firma dello studente ===
     digest_student = hashlib.sha256(
         json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -89,8 +93,12 @@ def process_response(role):
         print(" Finestra scaduto o non ancora valido.")
         exit(1)
     print(" Finestra temporale valida.")
-
-    # === Step 6: Genera chiave DH (x_B, y_B) ===
+    # === Step 6: Verifica audience ===
+    if response["aud"] != server_subject:
+        print(" Audience non corrisponde.")
+        sys.exit(1)
+    print(" Audience corretta.")
+    # === Step 7: Genera chiave DH (x_B, y_B) ===
     p = int(challenge["sp"], 16)
     g = int(challenge["ge"])
     x_b, y_b = generate_dh_key_pair(p=p, g=g)
@@ -98,7 +106,7 @@ def process_response(role):
     with open(f"data/{role}/{role}_dh_private.txt", "w") as f:
         f.write(str(x_b))
 
-    # === Step 7: Firma messaggio con y_B ===
+    # === Step 8: Firma messaggio con y_B ===
     issued_at = datetime.now(timezone.utc).isoformat()
     expires_at = (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat()
     aud = challenge["aud"]
@@ -141,7 +149,7 @@ def process_response(role):
     print(f"Salvato in {dh_response_path}")
 
     if role == "verifier":
-        # === Step 8: Calcola e salva chiave di sessione condivisa (K_session) ===
+        # === Step 9: Calcola e salva chiave di sessione condivisa (K_session) ===
         session_key = derive_shared_key(y_a, x_b, p)
 
         session_key_path = f"data/challenge_verifier_holder/key/session_key_{role}.shared"
