@@ -42,11 +42,6 @@ def generate_cert_and_key(subject_dn: dict, cert_path: str, key_path: str):
     print(f"    Certificato:    {cert_path}")
 
 if __name__ == "__main__":
-    import time
-
-    # 🔁 Imposta a True per attivare la raccolta delle prestazioni
-    ANALISI_PRESTAZIONI = True
-
     os.makedirs("issuer/cert", exist_ok=True)
     os.makedirs("holder/cert", exist_ok=True)
     os.makedirs("verifier/cert", exist_ok=True)
@@ -78,30 +73,9 @@ if __name__ == "__main__":
             "key_path": "ocsp/cert/ocsp_private_key.pem"
         }
     ]
-
-    table = []
-
     for entity in entities:
-        if ANALISI_PRESTAZIONI:
-            start = time.time()
-
         generate_cert_and_key(entity["subject_dn"], entity["cert_path"], entity["key_path"])
 
-        if ANALISI_PRESTAZIONI:
-            elapsed_ms = (time.time() - start) * 1000
-            cert_size_kb = os.path.getsize(entity["cert_path"]) / 1024
-            key_size_kb = os.path.getsize(entity["key_path"]) / 1024
+        
 
-            table.append([
-                entity["name"],
-                f"{cert_size_kb:.2f} KB",
-                f"{key_size_kb:.2f} KB",
-                f"{elapsed_ms:.1f} ms"
-            ])
-
-    if ANALISI_PRESTAZIONI:
-        print("\n=== Tabella Prestazioni Certificati ===")
-        print(f"{'Entità':<10} {'Certificato':>15} {'Chiave':>12} {'Tempo':>10}")
-        print("-" * 50)
-        for row in table:
-            print(f"{row[0]:<10} {row[1]:>15} {row[2]:>12} {row[3]:>10}")
+    
