@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 import hashlib
 from cryptography.x509.oid import NameOID
-
+import time
 # === CONFIG ===
 P_PROT_PATH = "data/challenge_verifier_holder/P_prot_ciphered.enc"
 SESSION_KEY_PATH = "data/challenge_verifier_holder/key/session_key_verifier.shared"
@@ -76,6 +76,7 @@ digest.update(message)
 final_digest = digest.finalize()
 
 try:
+    start = time.perf_counter()
     public_key.verify(
         signature,
         final_digest,
@@ -86,7 +87,8 @@ try:
         hashes.SHA256()
     )
     print(" Firma OCSP verificata correttamente.")
-
+    t_ocsp = (time.perf_counter() - start) * 1000
+    print(f"[Tempo] Verifica firma OCSP: {t_ocsp:.2f} ms")
 except Exception as e:
     print(" Errore verifica firma OCSP:", e)
     exit(1)

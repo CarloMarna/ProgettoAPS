@@ -6,7 +6,7 @@ from cryptography import x509
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-
+import time
 from common.crypto_utils import  verify_signature
 from holder.credential_holder import CredentialHolder
 import hashlib
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     nonce = challenge_obj["nonce"]
     issued_at = challenge_obj["issued_at"]
     expires_at = challenge_obj["expires_at"]
-
+    start = time.time()
     P_prot = holder.prepare_presentation(
         vc=VC,
         vc_hmac=vc_hmac,
@@ -163,14 +163,19 @@ if __name__ == "__main__":
     if P_prot is None:
         print("Preparazione della presentazione fallita.")
         exit(1)
-        
+    t_presentation = (time.time() - start) * 1000
+    print(f"[Tempo] Preparazione presentazione: {t_presentation:.2f} ms")    
     # === Step 6: Cifra P_prot con R ===
     R = session_key_holder
     fernet_session = Fernet(R)
 
     P_prot_bytes = json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode()
+    start = time.time()
     encrypted_presentation = fernet_session.encrypt(P_prot_bytes)
-
+    t_encryption = (time.time() - start) * 1000
+    size_kb = len(encrypted_presentation) / 1024
+    print(f"[Tempo] Cifratura presentazione: {t_encryption:.2f} ms")
+    print(f"[Info] Dimensione presentazione cifrata: {size_kb:.2f} KB")
     with open("data/challenge_verifier_holder/P_prot_ciphered.enc", "wb") as f:
         f.write(encrypted_presentation)
 

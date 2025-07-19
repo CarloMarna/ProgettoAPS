@@ -1,6 +1,6 @@
 import json
 from cryptography.fernet import Fernet
-
+import time
 from issuer.credential_issuer import CredentialIssuer
 from common.exercise_3 import compute_merkle_proofs
 
@@ -44,7 +44,10 @@ if __name__ == "__main__":
         revocation_registry="data/ocsp/ocsp_registry.json"
     )
 
+    start = time.time()
     vc, serialized_attrs, tree = issuer.issue(holder_dn, attributes)
+    t_issue = (time.time() - start) * 1000
+    print(f"\n[Tempo] Emissione VC: {t_issue:.2f} ms")
 
     print("\nVerifiable Credential firmata correttamente.")
     print(f" ID credenziale: {vc['ID_C']}")
@@ -53,7 +56,10 @@ if __name__ == "__main__":
     print(f" Revocation ID: {vc['revocation']['revocationId'][:40]}...")
 
     # === Step 5: Calcolo delle Merkle proof π_i ===
+    start = time.time()
     proofs_with_index = compute_merkle_proofs(tree[0], tree)
+    t_merkle = (time.time() - start) * 1000
+    print(f" Merkle tree costruito in {t_merkle:.2f} ms con {len(proofs_with_index)} prove.")   
     print(f" Merkle tree costruito e {len(proofs_with_index)} prove generate.")
 
     # === Step 6: Costruzione del payload cifrato ===

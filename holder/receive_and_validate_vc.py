@@ -3,7 +3,8 @@ import copy
 from cryptography.fernet import Fernet
 from holder.credential_holder import CredentialHolder
 import traceback
-
+import os
+import time
 def load_encrypted_payload(path_enc: str, path_key: str) -> dict:
     """Decifra il payload cifrato usando la session key"""
     with open(path_key, "rb") as f:
@@ -19,12 +20,19 @@ def load_encrypted_payload(path_enc: str, path_key: str) -> dict:
 
 if __name__ == "__main__":
     try:
+        encrypted_path = "data/challenge_issuer_holder/vc_payload.enc"
+        key_path = "data/challenge_issuer_holder/key/session_key.shared"
+        size_kb = os.path.getsize(encrypted_path) / 1024
+        print(f"\n[Info] Dimensione del payload cifrato ricevuto: {size_kb:.2f} KB")
+        start = time.time()
+        
         # === Step 1: Caricamento e decifratura ===
         payload = load_encrypted_payload(
             path_enc="data/challenge_issuer_holder/vc_payload.enc",
             path_key="data/challenge_issuer_holder/key/session_key.shared"
         )
-
+        t_decrypt = (time.time() - start) * 1000
+        print(f"[Tempo] Decifratura completata in {t_decrypt:.2f} ms")
         # === Step 2: Ispezione del payload ===
         VC = payload["VC"]
         attributes = payload["attributes"]
@@ -54,11 +62,13 @@ if __name__ == "__main__":
 
         # === Step 4: Carica lo schema e verifica la VC ===
         print("\nAvvio della verifica completa della credenziale...")
+        start = time.time()
         if holder.verify_credential(payload):
             print("La credenziale è valida e archiviata nel wallet.")
         else:
             print("La credenziale NON è valida. Operazione interrotta.")
-
+        t_verify = (time.time() - start) * 1000
+        print(f"[Tempo] Verifica credenziale completata in {t_verify:.2f} ms")
     except Exception as e:
         print("\n Errore durante l'esecuzione:")
         traceback.print_exc()
