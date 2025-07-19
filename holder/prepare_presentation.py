@@ -1,4 +1,5 @@
 import json
+import sys
 import os
 from datetime import datetime, timedelta, timezone
 from cryptography import x509

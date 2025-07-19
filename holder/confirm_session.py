@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta, timezone
 import os
+import sys
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
