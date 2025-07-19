@@ -66,9 +66,9 @@ def process_response(role):
     with open(nonce_log, "a") as f:
         f.write(nonce + "\n")
 
-    print(" Challenge attualmente valida.")
+    print(" Nonce corretto")
     #
-    print(" Genero nuovo nonce .")
+    print(" Genero nuovo nonce")
     nonce = os.urandom(32).hex()
     #
     # === Step 4: Verifica firma dello studente ===

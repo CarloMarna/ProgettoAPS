@@ -66,7 +66,7 @@ if __name__ == "__main__":
         sys.exit(1)
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
-    print("nonce verificato con successo")
+    print(" Nonce verificato con successo")
     
     # === Step 6: Deriva chiave di sessione DH ===
     p_hex = load_json("data/challenge_verifier_holder/challenge_response.json")["original_challenge"]["sp"]

@@ -78,7 +78,7 @@ def respond_to_challenge(role):
         sys.exit(1)
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
-
+    print(" Nonce corretto.")
     # === Step 5: Genera chiave DH ===
     p = int(sp, 16)
     g = int(ge)

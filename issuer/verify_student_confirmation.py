@@ -60,7 +60,7 @@ if nonce in used_nonces:
 # === Step 5: Registra il nonce come usato definitivamente ===
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
-print("\nNonce2 registrato come usato.")
+print(" Nonce2 corretto.")
 
 # === Step 6: Calcola chiave di sessione: K_session = y_A^x_B mod p ===
 with open("data/challenge_issuer_holder/challenge_response.json", "r") as f:
