@@ -1,5 +1,6 @@
 import os
 import json
+import sys
 from datetime import datetime, timedelta, timezone
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
@@ -68,7 +69,14 @@ def process_response(role):
         f.write(nonce + "\n")
 
     print(" Nonce corretto")
+<<<<<<< HEAD
     nonce = os.urandom(32).hex()
+=======
+    print(" Genero nuovo nonce")
+    nonce = os.urandom(32).hex()
+    
+
+>>>>>>> e737c5e4f507355b7f262bd19f60e92e80bffa6d
     # === Step 4: Verifica firma dello studente ===
     digest_student = hashlib.sha256(
         json.dumps(response, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -90,11 +98,13 @@ def process_response(role):
         print(" Finestra scaduto o non ancora valido.")
         exit(1)
     print(" Finestra temporale valida.")
+
     # === Step 6: Verifica audience ===
     if response["aud"] != server_subject:
         print(" Audience non corrisponde.")
         sys.exit(1)
     print(" Audience corretta.")
+
     # === Step 7: Genera chiave DH (x_B, y_B) ===
     p = int(challenge["sp"], 16)
     g = int(challenge["ge"])
@@ -148,11 +158,9 @@ def process_response(role):
     if role == "verifier":
         # === Step 9: Calcola e salva chiave di sessione condivisa (K_session) ===
         session_key = derive_shared_key(y_a, x_b, p)
-
         session_key_path = f"data/challenge_verifier_holder/key/session_key_{role}.shared"
         with open(session_key_path, "wb") as f:
             f.write(session_key)
-
         print(f"\nChiave di sessione DH e salvata in '{session_key_path}'")
 
 
