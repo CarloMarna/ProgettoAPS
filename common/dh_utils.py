@@ -17,6 +17,7 @@ E39E772C 180E8603 9B2783A2 EC07A28F B5C55DF0 6F4C52C9
 DE2BCBF6 95581718 3995497C EA956AE5 15D22618 98FA0510
 15728E5A 8AACAA68 FFFFFFFF FFFFFFFF
 """.replace(" ", "").replace("\n", ""), 16)
+
 ISSUER_G = 2
 
 # Gruppo DH per il verifier
@@ -33,15 +34,10 @@ BENCHMARK_DH = True
 def benchmark(func):
     def wrapper(*args, **kwargs):
         if BENCHMARK_DH:
-            start = time.time()
+            start = time.perf_counter() 
             result = func(*args, **kwargs)
-<<<<<<< HEAD
-            elapsed = (time.time() - start) * 1000
-            print(f"[BENCH] {func.__name__} eseguita in {elapsed:.2f} ms")
-=======
             elapsed = (time.perf_counter() - start) * 1000
             print(f" [TEMPO] {func.__name__} eseguita in {elapsed:.2f} ms")
->>>>>>> 63fbb13f84cd70c86936bb26775af6972b11c445
             return result
         else:
             return func(*args, **kwargs)
