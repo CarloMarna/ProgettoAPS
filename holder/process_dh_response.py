@@ -67,7 +67,12 @@ if __name__ == "__main__":
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
     print(" Nonce verificato con successo")
-    
+    # === Step 5.2: Verifica audience ===
+    my_identity = "CN=Mario Rossi, SerialNumber=123456"
+    if response["aud"] != my_identity:
+        print(" Audience non corrisponde.")
+        sys.exit(1)
+    print(" Audience corretta.")
     # === Step 6: Deriva chiave di sessione DH ===
     p_hex = load_json("data/challenge_verifier_holder/challenge_response.json")["original_challenge"]["sp"]
     p = int(p_hex, 16)

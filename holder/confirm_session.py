@@ -48,7 +48,7 @@ else:
     print(" Firma  NON valida.")
     exit(1)
 
-# === Step Added: Verifica nonce ===
+# === Step 3: Verifica nonce ===
 nonce_file = "data/holder/used_nonces.txt"
 used_nonces = set()
 if os.path.exists(nonce_file):
@@ -59,9 +59,16 @@ if nonce in used_nonces:
     sys.exit(1)
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
-print(" Nonce2 Verificato con Successo.")
+print(" Nonce2 verificato con Successo.")
 
-# === Step 3: Calcola chiave di sessione K_session = y_B ^ x_A mod p ===
+# === Step 4: Verifica audience ===
+my_identity = "CN=Mario Rossi, SerialNumber=123456"
+if aud != my_identity:
+    print(" Audience non corrisponde.")
+    sys.exit(1)
+print(" Audience corretta.")
+
+# === Step 5: Calcola chiave di sessione K_session = y_B ^ x_A mod p ===
 with open("data/holder/holder_dh_private.txt", "r") as f:
     x_a = int(f.read())
 
@@ -76,7 +83,7 @@ with open("data/challenge_issuer_holder/key/session_key.shared", "wb") as f:
 
 print("\nChiave di sessione condivisa calcolata e salvata.")
 
-# === Step 4: Costruisci conferma firmata ===
+# === Step 6: Costruisci conferma firmata ===
 issued_at_c = datetime.now(timezone.utc).isoformat()
 expires_at_c = (datetime.now(timezone.utc) + timedelta(minutes=2)).isoformat()
 confirmation_aud = newAud  # CN=Mario Rossi, SerialNumber=...
@@ -105,7 +112,7 @@ signature_confirmation = sk_holder.sign(
     utils.Prehashed(hashes.SHA256())
 )
 
-# === Step 5: Salva messaggio di conferma ===
+# === Step 7: Salva messaggio di conferma ===
 final_confirmation = {
     "student_confirmation": confirmation_dict,
     "signature": signature_confirmation.hex()

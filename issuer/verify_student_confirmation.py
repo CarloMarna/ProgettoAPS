@@ -31,6 +31,7 @@ digest = hashlib.sha256(
 with open("holder/cert/holder_cert.pem", "rb") as f:
     holder_cert = x509.load_pem_x509_certificate(f.read())
     pk_holder = holder_cert.public_key()
+    
 print("Verifica challange ricevuta:")
 if verify_signature(digest, signature, pk_holder):
     print(" Firma valida")
@@ -61,8 +62,15 @@ if nonce in used_nonces:
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
 print(" Nonce2 corretto.")
-
-# === Step 6: Calcola chiave di sessione: K_session = y_A^x_B mod p ===
+# === Step 6: Verifica aud ===
+with open("issuer/cert/issuer_cert.pem", "rb") as f:
+    issuer_cert = x509.load_pem_x509_certificate(f.read())
+    issuer_subject = issuer_cert.subject.rfc4514_string()
+    if aud != issuer_subject:
+        print(" Audience non corrisponde.")
+        sys.exit(1)
+    print(" Audience corretta.")
+# === Step 7: Calcola chiave di sessione: K_session = y_A^x_B mod p ===
 with open("data/challenge_issuer_holder/challenge_response.json", "r") as f:
     response = json.load(f)
 

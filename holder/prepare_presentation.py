@@ -108,7 +108,13 @@ if __name__ == "__main__":
         sys.exit(1)
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
-    print("nonce verificato con successo")
+    print(" Nonce verificato con successo")
+    # === Step 3.2: Verifica audience ===
+    my_identity = "CN=Mario Rossi, SerialNumber=123456"
+    if challenge_obj["aud"]!= my_identity:
+        print(" Audience non corrisponde.")
+        sys.exit(1)
+    print(" Audience corretta.")
     # === Step 4: Carica VC, attributi e proof ===
     certs = list_certifications()
 
