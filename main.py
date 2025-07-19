@@ -1,10 +1,8 @@
 import subprocess
 import sys
 import os
-from ocsp.registry import OCSPRegistry
-from issuer.credential_issuer import CredentialIssuer
-# Aggiunge la root del progetto al PYTHONPATH
-sys.path.insert(0, os.path.abspath("."))  # ROOT dir: progetto_cred_vc/
+
+sys.path.insert(0, os.path.abspath(".")) 
 
 def run(title, command):
     print(f"\n🟢 {title}")
@@ -14,12 +12,13 @@ def run(title, command):
     except subprocess.CalledProcessError:
         print(f"❌ Errore in: {command}")
         exit(1)
+    #input("\nPremi INVIO per continuare...\n")
 
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
     
     # === 1. Setup: Generazione certificati
-    run("1. Generazione certificati", "python generate_certs.py")
+    run("1. Generazione certificati", "python -m common.generate_certs")
 
     # === 2. ISSUER → HOLDER
     run("2.1 Issuer invia challenge", "python -m common.create_challenge issuer")
