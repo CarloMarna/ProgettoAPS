@@ -109,10 +109,9 @@ vc_holder = VC["holder"]
 vc_cn = next((x.split("=")[1] for x in vc_holder.split(",") if x.startswith("CN=")), None)
 cert_cn = holder_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
 if vc_cn != cert_cn:
-    print(" Mismatch sul CN tra VC e certificato.")
+    print("Mismatch sul CN tra VC e certificato.")
     exit(1)
-print(" CN del holder corrispondente.")
-
+print("CN del holder corrispondente.")
 unsigned = {k: P_prot[k] for k in P_prot if k not in ("signature_holder", "Credenziale")}
 serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True).encode()
 digest_holder = hashlib.sha256(serialized).digest()

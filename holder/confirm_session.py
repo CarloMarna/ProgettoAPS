@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta, timezone
-
+import os
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
@@ -47,6 +47,19 @@ if verify_signature(digest, signature_server, pk_issuer):
 else:
     print(" Firma  NON valida.")
     exit(1)
+
+# === Step Added: Verifica nonce ===
+nonce_file = "data/holder/used_nonces.txt"
+used_nonces = set()
+if os.path.exists(nonce_file):
+    with open(nonce_file, "r") as f:
+        used_nonces = set(line.strip() for line in f)
+if nonce in used_nonces:
+    print(" Nonce già usato.")
+    sys.exit(1)
+with open(nonce_file, "a") as f:
+    f.write(nonce + "\n")
+print(" Nonce2 Verificato con Successo.")
 
 # === Step 3: Calcola chiave di sessione K_session = y_B ^ x_A mod p ===
 with open("data/holder/holder_dh_private.txt", "r") as f:
