@@ -97,7 +97,7 @@ class CredentialIssuer:
             }
         }
 
-        # === Step 7: Firma l'intera VC (escludendo il campo "signature")
+        # === Step 7: Firma la VC 
         vc_serialized = json.dumps(VC, sort_keys=True, separators=(",", ":")).encode("utf-8")
         digest = hashes.Hash(hashes.SHA256())
         digest.update(vc_serialized)

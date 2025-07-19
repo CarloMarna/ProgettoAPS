@@ -27,7 +27,6 @@ expires_at = issued_at + timedelta(minutes=2)
 # === AUDIENCE (studente) ===
 aud = "CN=Mario Rossi, SerialNumber=123456"
 
-# === Recupera esami richiesti dallo studente dal database simulato ===
 # === Carica tutti gli esami disponibili dello studente
 tutti_esami = load_student_exams(aud)
 
@@ -40,7 +39,7 @@ print("\nEsami disponibili per lo studente:")
 for i, nome_esame in enumerate(tutti_esami):
     print(f" [{i}] {nome_esame}")
 
-# === Selezione interattiva degli esami da inserire nella challenge
+# === Selezione degli esami da inserire nella challenge
 while True:
     scelti = input("\nInserisci gli indici separati da virgola degli esami da includere nella challenge: ")
     try:

@@ -108,6 +108,7 @@ pk_holder = holder_cert.public_key()
 vc_holder = VC["holder"]
 vc_cn = next((x.split("=")[1] for x in vc_holder.split(",") if x.startswith("CN=")), None)
 cert_cn = holder_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+
 if vc_cn != cert_cn:
     print(" Mismatch sul CN tra VC e certificato.")
     exit(1)

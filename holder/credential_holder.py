@@ -30,6 +30,7 @@ class CredentialHolder:
             os.makedirs(os.path.dirname(k_wallet_path), exist_ok=True)
             with open(k_wallet_path, "wb") as f:
                 f.write(self.k_wallet)
+
     def verify_credential(self, payload: dict) -> bool:
         """Esegue tutti i controlli sulla VC ricevuta"""
         VC = payload["VC"]
@@ -70,7 +71,8 @@ class CredentialHolder:
             print(f" π_{i} valida per attributo {i} (indice Merkle: {index})")
 
         # Step 4: salva HMAC locale nel wallet
-        hmac_value = self.compute_local_hmac(VC)
+        hmac_value = self.compute_local_hmac(VC, attributes, proofs)
+        print(" HMAC locale calcolato e pronto per la verifica futura.")
     
         with open(os.path.join(wallet_path, "valid_vc.json"), "w") as f:
             json.dump(VC, f, indent=2)
@@ -87,24 +89,7 @@ class CredentialHolder:
     
         print("\nTutte le informazioni sono state salvate nel wallet.")
         return True
-
-    def compute_local_hmac(self, vc: dict) -> bytes:
-        """Calcola e salva HMAC della VC per protezione locale"""
-        vc_bytes = json.dumps(vc, separators=(",", ":"), sort_keys=True).encode()
-        h = hmac.HMAC(self.k_wallet, hashes.SHA256())
-        h.update(vc_bytes)
-        return h.finalize()
-
-    def verify_local_integrity(self, vc: dict, stored_hmac: bytes) -> bool:
-        """Verifica HMAC locale con confronto a tempo costante"""
-        vc_bytes = json.dumps(vc, separators=(",", ":"), sort_keys=True).encode()
-        h = hmac.HMAC(self.k_wallet, hashes.SHA256())
-        h.update(vc_bytes)
-        try:
-            h.verify(stored_hmac)
-            return True
-        except Exception:
-            return False
+    
     def prepare_presentation(self, vc: dict, vc_hmac: bytes, attributes: List[str], proofs: List[List[str]], nonce: str, issued_at: str, expires_at: str, aud: str) -> dict:
         while True:
             print("\nEsami disponibili:")
@@ -137,7 +122,7 @@ class CredentialHolder:
             else:
                 print("Ripeti la selezione degli esami.\n")
 
-        if self.verify_local_integrity(vc, vc_hmac):
+        if self.verify_local_integrity(vc, attributes, proofs, vc_hmac):
             print("\nIntegrità della VC verificata con successo. \n")
         else:
             print("\nIntegrità della VC compromessa. Non è possibile procedere.")
@@ -179,3 +164,33 @@ class CredentialHolder:
         for i, attr_json in enumerate(attributes):
             data = json.loads(attr_json)
             jsonschema.validate(instance=data, schema=json_schema)
+            
+    def compute_local_hmac(self, vc: dict, attributes: List[str], proofs: List[dict]) -> bytes:
+        """Calcola HMAC sull'intero payload locale (VC, attributi, prove)"""
+        data = {
+            "VC": vc,
+            "attributes": attributes,
+            "proofs": proofs
+        }
+        serialized = json.dumps(data, separators=(",", ":"), sort_keys=True).encode()
+        h = hmac.HMAC(self.k_wallet, hashes.SHA256())
+        h.update(serialized)
+        return h.finalize()
+
+    def verify_local_integrity(self, vc: dict, attributes: List[str], proofs: List[dict], stored_hmac: bytes) -> bool:
+        """Verifica HMAC locale su VC, attributi e proof"""
+        data = {
+            "VC": vc,
+            "attributes": attributes,
+            "proofs": proofs
+        }
+        serialized = json.dumps(data, separators=(",", ":"), sort_keys=True).encode()
+        h = hmac.HMAC(self.k_wallet, hashes.SHA256())
+        h.update(serialized)
+        try:
+            h.verify(stored_hmac)
+            return True
+        except Exception:
+            return False
+
+        

@@ -73,3 +73,4 @@ if __name__ == "__main__":
 
     print("\nPacchetto VC cifrato salvato in 'data/vc_payload.enc'")
     print("Procedura completata con successo.")
+

@@ -45,7 +45,6 @@ def compute_merkle_proofs(leaves, tree):
             if 0 <= sibling < len(level):
                 proof.append(level[sibling])
             index //= 2
-        # Restituiamo un dizionario con proof e posizione
         proofs_with_index.append({
             "index": idx_for_proof,
             "proof": proof
