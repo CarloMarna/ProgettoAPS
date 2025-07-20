@@ -110,7 +110,6 @@ class CredentialHolder:
                 print(" Input non valido. Usa solo numeri separati da virgole.\n")
                 continue
 
-            #m_i = [json.loads(attributes[i]) for i in indici]
             m_i = [attributes[i] for i in indici]
             π_i = [proofs[i] for i in indici]
 
@@ -126,11 +125,11 @@ class CredentialHolder:
             else:
                 print("Ripeti la selezione degli esami.\n")
 
-        '''if self.verify_local_integrity(vc, attributes, proofs, vc_hmac):
+        if self.verify_local_integrity(vc, attributes, proofs, vc_hmac):
             print("\nIntegrità della VC verificata con successo. \n")
         else:
             print("\nIntegrità della VC compromessa. Non è possibile procedere.")
-            return None'''
+            return None
         
         # Costruzione presentazione
         P_prot = {

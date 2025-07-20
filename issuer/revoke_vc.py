@@ -10,32 +10,16 @@ VC_DIRECTORY = "data/issuer/VC"
 PRIVATE_KEY_PATH = "issuer/cert/issuer_private_key.pem"
 CERT_PATH = "issuer/cert/issuer_cert.pem"
 
-def carica_ultima_vc():
-    vc_files = [
-        os.path.join(VC_DIRECTORY, file)
-        for file in os.listdir(VC_DIRECTORY)
-        if file.endswith(".json")
-    ]
+def carica_vc_selezionata(path="data/holder/selected_vc.json"):
+    with open(path, "r") as f:
+        vc = json.load(f)
+    return (
+        path,
+        vc["ID_C"],
+        vc["revocation"]["revocationId"],
+        vc.get("holder", "N/A")
+    )
 
-    if not vc_files:
-        return None
-
-    vc_files.sort(key=os.path.getmtime, reverse=True)
-    latest_file = vc_files[0]
-
-    with open(latest_file, "r") as f:
-        data = json.load(f)
-        vc = data.get("VC", data)
-        try:
-            return (
-                os.path.basename(latest_file),
-                vc["ID_C"],
-                vc["revocation"]["revocationId"],
-                vc.get("holder", "N/A")
-            )
-        except KeyError:
-            print(f"File {latest_file} non contiene VC valida.")
-            return None
 
 def firma_revoca(revocation_id, reason, cert_path, private_key_path):
     message_dict = {
@@ -59,7 +43,7 @@ def firma_revoca(revocation_id, reason, cert_path, private_key_path):
     return signature.hex()
 
 if __name__ == "__main__":
-    selected_vc = carica_ultima_vc()
+    selected_vc = carica_vc_selezionata()
 
     _, vc_id, revocation_id, holder = selected_vc
     motivo = input("Motivo della revoca: ") or "unspecified"

@@ -43,7 +43,6 @@ if __name__ == "__main__":
         # Stampa 
         vc_pretty = copy.deepcopy(payload["VC"])
         vc_pretty["signature"]["signatureValue"] = vc_pretty["signature"]["signatureValue"][:64] + "..."  
-        vc_pretty["signature"]["signedData"] = vc_pretty["signature"]["signedData"][:64] + "..."
         print("\n Verifiable Credential (VC):")
         print(json.dumps(vc_pretty, indent=2))
 

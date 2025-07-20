@@ -2,6 +2,7 @@ import hashlib
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 from cryptography import x509
+import json
 
 def verify_signature(digest: bytes, signature: bytes, public_key) -> bool:
     """Verifica firma su un digest già calcolato (Prehashed)"""
@@ -19,21 +20,29 @@ def verify_signature(digest: bytes, signature: bytes, public_key) -> bool:
     except Exception:
         return False
 def verify_signature_VC(vc: dict) -> bool:
-    """Verifica la firma hash-then-sign dell’università"""
-    signed_data = vc["signature"]["signedData"]
-    signature = bytes.fromhex(vc["signature"]["signatureValue"])
-    cert_path = vc["signature"]["verificationMethod"]
     try:
+        signature_block = vc["signature"]
+        signature = bytes.fromhex(signature_block["signatureValue"])
+        cert_path = signature_block["verificationMethod"]
+
+        # Rimuove la firma prima di serializzare
+        vc_to_verify = vc.copy()
+        vc_to_verify["signature"] = vc_to_verify["signature"].copy()
+        del vc_to_verify["signature"]["signatureValue"]
+
+        # Serializza la VC nello stesso modo usato in firma
+        vc_serialized = json.dumps(vc_to_verify, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+        # Calcola digest
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(vc_serialized)
+        final_digest = digest.finalize()
+
+        # Carica il certificato e verifica
         with open(cert_path, "rb") as f:
             cert = x509.load_pem_x509_certificate(f.read())
             pk_issuer = cert.public_key()
 
-        # Calcola il digest
-        digest = hashes.Hash(hashes.SHA256())
-        digest.update(signed_data.encode("utf-8"))
-        final_digest = digest.finalize()
-
-        # Verifica la firma 
         pk_issuer.verify(
             signature,
             final_digest,
@@ -41,9 +50,10 @@ def verify_signature_VC(vc: dict) -> bool:
                 mgf=padding.MGF1(hashes.SHA256()),
                 salt_length=padding.PSS.MAX_LENGTH
             ),
-            utils.Prehashed(hashes.SHA256())  
+            utils.Prehashed(hashes.SHA256())
         )
         return True
+
     except Exception as e:
-        print(f"Errore nella verifica della firma VC: {e}")
         return False
+

@@ -117,9 +117,7 @@ class CredentialIssuer:
         )
 
         # === Step 8: Aggiunge la firma + signedData alla VC
-        VC["signature"]["signedData"] = vc_serialized.decode("utf-8")
         VC["signature"]["signatureValue"] = signature.hex()
-
 
         # === Step 9: Salva la VC su file
         vc_path = os.path.join("data/issuer/VC", f"{id_c}.json")

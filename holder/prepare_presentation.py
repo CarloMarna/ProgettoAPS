@@ -144,6 +144,10 @@ if __name__ == "__main__":
 
     VC, attributes, proofs, vc_hmac = load_vc_package(cert_path)
 
+    selected_vc_path = "data/holder/selected_vc.json"
+    with open(selected_vc_path, "w") as f:
+        json.dump(VC, f)
+
     # === Step 5: Prepara P_prot ===
     holder = CredentialHolder("holder/cert/holder_private_key.pem", "holder/cert/holder_cert.pem")
     nonce = challenge_obj["nonce"]

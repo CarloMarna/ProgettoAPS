@@ -41,7 +41,6 @@ signature_holder = bytes.fromhex(P_prot["signature_holder"])
 # === Step 3: Verifica scadenza e firma issuer sulla VC ===
 print("\nVerifica della Verifiable Credential (VC)")
 merkle_root = VC["merkle"]["root"]
-signed_data = VC["signature"]["signedData"]
 date_expires = VC["expirationDate"]
 if datetime.fromisoformat(date_expires) < datetime.now(timezone.utc):
     print(" La VC risulta scaduta.")
@@ -92,7 +91,6 @@ try:
 except Exception as e:
     print(" Errore verifica firma OCSP")
     exit(1)
-
 
 if ocsp_response["status"] == "revoked":
     print(" Credenziale revocata secondo OCSP.")
