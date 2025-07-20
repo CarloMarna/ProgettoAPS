@@ -17,8 +17,9 @@ def run(title, command):
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)
     
-    # === 1. Setup: Generazione certificati
+    # === 1. Setup: Generazione certificati e password wallet
     run("1. Generazione certificati", "python -m common.generate_certs")
+    run("1.1 Generazione password wallet", "python -m holder.genera_password_wallet")
 
     # === 2. ISSUER → HOLDER
     run("2.1 Issuer invia challenge", "python -m common.create_challenge issuer")

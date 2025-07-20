@@ -1,15 +1,15 @@
 import json
 import sys
 import os
-from datetime import datetime, timedelta, timezone
+import hashlib
+import base64
+from datetime import datetime, timezone
 from cryptography import x509
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding
 import time
 from common.crypto_utils import  verify_signature
 from holder.credential_holder import CredentialHolder
-import hashlib
+
 def list_certifications(base_path="data/holder/wallet"):
     return [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
 
@@ -50,6 +50,16 @@ def stampa_presentazione(P_prot):
         for j, h in enumerate(proof_entry["proof"]):
             print(f"         ├─ {j+1}. {h}")
 
+def verifica_password(password_input):
+
+    with open("data/holder/wallet/password_data.json", "r") as f:
+        data = json.load(f)
+
+    salt = base64.b64decode(data["salt"])
+    expected_hash = data["hash"]
+    
+    hash_input = hashlib.sha256(salt + password_input.encode()).hexdigest()
+    return hash_input == expected_hash
 
 if __name__ == "__main__":
     # === Step 1: Carica e decifra la challenge ===
@@ -119,9 +129,21 @@ if __name__ == "__main__":
         sys.exit(1)
     print(" Audience corretta.")
     
+    # === Step 3.3: Accesso al wallet ===
+    MAX_ATTEMPT = 2
+    for _ in range(MAX_ATTEMPT):
+        pwd = input("Inserisci la password per accedere al wallet (Aps2025?): ")
+        if verifica_password(pwd):
+            print("Accesso al wallet riuscito.\n")
+            break
+        else:
+            print("Password errata.\n")
+    else:
+        print("Troppi tentativi falliti. Procedura annullata.")
+        exit(1)
+
     # === Step 4: Carica VC, attributi e proof ===
     certs = list_certifications()
-
     if not certs:
         print("Nessuna certificazione trovata.")
         exit(1)
