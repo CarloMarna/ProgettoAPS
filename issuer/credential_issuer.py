@@ -94,10 +94,14 @@ class CredentialIssuer:
             "revocation": {
                 "revocationId": revocation_id,
                 "registry": self.revocation_registry
+            },
+
+            "signature": {
+                "verificationMethod": self.verification_method
             }
         }
 
-        # === Step 7: Firma la VC 
+        # === Step 7: Firma VC 
         vc_serialized = json.dumps(VC, sort_keys=True, separators=(",", ":")).encode("utf-8")
         digest = hashes.Hash(hashes.SHA256())
         digest.update(vc_serialized)
@@ -113,11 +117,9 @@ class CredentialIssuer:
         )
 
         # === Step 8: Aggiunge la firma + signedData alla VC
-        VC["signature"] = {
-            "signatureValue": signature.hex(),
-            "signedData": vc_serialized.decode("utf-8"),
-            "verificationMethod": self.verification_method
-        }
+        VC["signature"]["signedData"] = vc_serialized.decode("utf-8")
+        VC["signature"]["signatureValue"] = signature.hex()
+
 
         # === Step 9: Salva la VC su file
         vc_path = os.path.join("data/issuer/VC", f"{id_c}.json")

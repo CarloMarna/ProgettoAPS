@@ -62,7 +62,7 @@ if __name__ == "__main__":
     selected_vc = carica_ultima_vc()
 
     _, vc_id, revocation_id, holder = selected_vc
-    motivo = input("Motivo della revoca (invio per 'unspecified'): ") or "unspecified"
+    motivo = input("Motivo della revoca: ") or "unspecified"
 
     # Firma i dati
     signature = firma_revoca(revocation_id, motivo, CERT_PATH, PRIVATE_KEY_PATH)

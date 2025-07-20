@@ -68,15 +68,19 @@ def respond_to_challenge(role):
     # === Step 4: Verifica nonce ===
     nonce_file = "data/holder/used_nonces.txt"
     used_nonces = set()
+
     if os.path.exists(nonce_file):
         with open(nonce_file, "r") as f:
             used_nonces = set(line.strip() for line in f)
+
     if nonce in used_nonces:
         print(" Nonce già usato.")
         sys.exit(1)
+
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
     print(" Nonce corretto.")
+    
     # === Step 5: Genera chiave DH ===
     p = int(sp, 16)
     g = int(ge)

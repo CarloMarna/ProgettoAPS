@@ -1,0 +1,20 @@
+{
+  "ID_C": "29e1f88f-be68-40fc-b746-076d387fbac6",
+  "issuer": "CN=University of Rennes, O=RENES, C=FR",
+  "holder": "CN=Mario Rossi, SerialNumber=123456",
+  "expirationDate": "2028-03-15T10:30:00Z",
+  "schema": "data/issuer/schemes/scheme.json",
+  "merkle": {
+    "root": "df4f5e5dee7c8713f3c43d3349e1b876a83ce56945e00b550c0007341dce7bf4",
+    "hashAlgorithm": "SHA-256"
+  },
+  "revocation": {
+    "revocationId": "49f2866ea74d8871fe1efc96d786b4ca89c95537f0e9d099cdafe363a51169e1",
+    "registry": "data/ocsp/ocsp_registry.json"
+  },
+  "signature": {
+    "signatureValue": "11dd0c3978a6fbc6ef0318eb50f8341b9b5440162e03060089ea83dbc8c2c05d279ee2589aee475215d6c9632c14db47877999b1876def0adc5f6ed30e2ce39f1682ae4d5f0c39e86dc591d494e8195da747c0e2b6badf4b34a2e90a28e887eb79557419c14a8aeeedd8a52e737057b8c4e4eb889e34d62e4c1c411f713ed436f109a4423dcab61d26c6475c6c46f7c50a7a9085f89d97e5ecfa00600404b1d5aa8dc89455c5fa70255e5c650d834114b075c15ed021c657fdc69d5a6cc333edc39b9d0cc8186de8fce5f95d75abcd307f352963efa192a62acc65aabef8c7f252d754f930c0f89520452eb25393bb4ad46bb23e3fe8c4ff2549f720e740e039",
+    "signedData": "{\"ID_C\":\"29e1f88f-be68-40fc-b746-076d387fbac6\",\"expirationDate\":\"2028-03-15T10:30:00Z\",\"holder\":\"CN=Mario Rossi, SerialNumber=123456\",\"issuer\":\"CN=University of Rennes, O=RENES, C=FR\",\"merkle\":{\"hashAlgorithm\":\"SHA-256\",\"root\":\"df4f5e5dee7c8713f3c43d3349e1b876a83ce56945e00b550c0007341dce7bf4\"},\"revocation\":{\"registry\":\"data/ocsp/ocsp_registry.json\",\"revocationId\":\"49f2866ea74d8871fe1efc96d786b4ca89c95537f0e9d099cdafe363a51169e1\"},\"schema\":\"data/issuer/schemes/scheme.json\"}",
+    "verificationMethod": "issuer/cert/issuer_cert.pem"
+  }
+}

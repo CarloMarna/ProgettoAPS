@@ -169,10 +169,12 @@ if __name__ == "__main__":
     P_prot_bytes = json.dumps(P_prot, separators=(",", ":"), sort_keys=True).encode()
     start = time.perf_counter()
     encrypted_presentation = fernet_session.encrypt(P_prot_bytes)
+    
     t_encryption = (time.perf_counter() - start) * 1000
     size_kb = len(encrypted_presentation) / 1024
     print(f"[TEMPO] Cifratura presentazione: {t_encryption:.2f} ms")
     print(f"[DIMENSIONE] Dimensione presentazione cifrata: {size_kb:.2f} KB")
+
     with open("data/challenge_verifier_holder/P_prot_ciphered.enc", "wb") as f:
         f.write(encrypted_presentation)
 

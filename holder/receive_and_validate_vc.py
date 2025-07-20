@@ -31,6 +31,7 @@ if __name__ == "__main__":
             path_enc="data/challenge_issuer_holder/vc_payload.enc",
             path_key="data/challenge_issuer_holder/key/session_key.shared"
         )
+        
         t_decrypt = (time.time() - start) * 1000
         print(f"[TEMPO] Decifratura completata in {t_decrypt:.2f} ms")
         
@@ -68,6 +69,7 @@ if __name__ == "__main__":
             print("La credenziale è valida e archiviata nel wallet.")
         else:
             print("La credenziale NON è valida. Operazione interrotta.")
+            exit(1)
         t_verify = (time.time() - start) * 1000
         print(f"[Tempo] Verifica credenziale completata in {t_verify:.2f} ms")
     except Exception as e:

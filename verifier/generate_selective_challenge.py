@@ -52,7 +52,6 @@ while True:
     except ValueError:
         print(" Input non valido. Usa numeri separati da virgole.")
 
-
 # === Costruisce il messaggio della challenge ===
 challenge_text = f"Presenta esami {', '.join(esami)}"
 

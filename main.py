@@ -12,7 +12,7 @@ def run(title, command):
     except subprocess.CalledProcessError:
         print(f"❌ Errore in: {command}")
         exit(1)
-    #input("\nPremi INVIO per continuare...\n")
+    input("\nPremi INVIO per continuare...\n")
 
 if __name__ == "__main__":
     os.makedirs("data", exist_ok=True)

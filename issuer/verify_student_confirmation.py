@@ -51,26 +51,30 @@ print(" Finestra temporale valida.")
 #nonce_file = "data/issuer/confirmed_nonces.txt"
 nonce_file = "data/issuer/used_nonces_issuer.txt"
 used_nonces = set()
+
 if os.path.exists(nonce_file):
     with open(nonce_file, "r") as f:
         used_nonces = set(line.strip() for line in f)
 
 if nonce in used_nonces:
-    print("Nonce già registrato. Potenziale replay.")
+    print(" Nonce già registrato. Potenziale replay.")
     exit(1)
 
 # === Step 5: Registra il nonce come usato definitivamente ===
 with open(nonce_file, "a") as f:
     f.write(nonce + "\n")
 print(" Nonce corretto.")
+
 # === Step 6: Verifica aud ===
 with open("issuer/cert/issuer_cert.pem", "rb") as f:
     issuer_cert = x509.load_pem_x509_certificate(f.read())
     issuer_subject = issuer_cert.subject.rfc4514_string()
+
     if aud != issuer_subject:
         print(" Audience non corrisponde.")
         sys.exit(1)
     print(" Audience corretta.")
+    
 # === Step 7: Calcola chiave di sessione: K_session = y_A^x_B mod p ===
 with open("data/challenge_issuer_holder/challenge_response.json", "r") as f:
     response = json.load(f)

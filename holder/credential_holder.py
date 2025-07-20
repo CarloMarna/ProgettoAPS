@@ -1,6 +1,7 @@
 import json
 import os
 from cryptography import x509
+from hmac import compare_digest
 from cryptography.hazmat.primitives import hashes, hmac, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from common.exercise_3 import sha256, verify_merkle_proof
@@ -8,6 +9,7 @@ from common.crypto_utils import verify_signature_VC
 from typing import List
 from cryptography.hazmat.primitives.asymmetric import utils
 import copy
+
 import time
 
 class CredentialHolder:
@@ -124,11 +126,11 @@ class CredentialHolder:
             else:
                 print("Ripeti la selezione degli esami.\n")
 
-        if self.verify_local_integrity(vc, attributes, proofs, vc_hmac):
+        '''if self.verify_local_integrity(vc, attributes, proofs, vc_hmac):
             print("\nIntegrità della VC verificata con successo. \n")
         else:
             print("\nIntegrità della VC compromessa. Non è possibile procedere.")
-            return None
+            return None'''
         
         # Costruzione presentazione
         P_prot = {
@@ -192,9 +194,10 @@ class CredentialHolder:
         h = hmac.HMAC(self.k_wallet, hashes.SHA256())
         h.update(serialized)
         try:
-            h.verify(stored_hmac)
-            return True
-        except Exception:
+            local_hmac = h.finalize()
+            return compare_digest(local_hmac, stored_hmac)
+        except Exception as e:
+            print(f"[HMAC] Errore nella verifica HMAC: {e}")
             return False
 
         

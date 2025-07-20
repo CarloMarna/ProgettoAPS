@@ -54,25 +54,31 @@ if __name__ == "__main__":
         exit(1)
     else:
         print(" Finestra temporale valida.")
+
     #Step 5.1 Verifica nonce
     nonce = response["nonce"]
     nonce_file = "data/holder/used_nonces.txt"
     used_nonces = set()
+
     if os.path.exists(nonce_file):
         with open(nonce_file, "r") as f:
             used_nonces = set(line.strip() for line in f)
+
     if nonce in used_nonces:
         print(" Nonce già usato.")
         sys.exit(1)
+
     with open(nonce_file, "a") as f:
         f.write(nonce + "\n")
     print(" Nonce verificato con successo")
+
     # === Step 5.2: Verifica audience ===
     my_identity = "CN=Mario Rossi, SerialNumber=123456"
     if response["aud"] != my_identity:
         print(" Audience non corrisponde.")
         sys.exit(1)
     print(" Audience corretta.")
+    
     # === Step 6: Deriva chiave di sessione DH ===
     p_hex = load_json("data/challenge_verifier_holder/challenge_response.json")["original_challenge"]["sp"]
     p = int(p_hex, 16)

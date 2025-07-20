@@ -37,16 +37,16 @@ expires_at = P_prot["expires_at"]
 aud = P_prot["aud"]
 signature_holder = bytes.fromhex(P_prot["signature_holder"])
 
-# === Step 3: Verifica firma issuer sulla VC ===
+ 
+# === Step 3: Verifica scadenza e firma issuer sulla VC ===
 print("\nVerifica della Verifiable Credential (VC)")
 merkle_root = VC["merkle"]["root"]
-
-
 signed_data = VC["signature"]["signedData"]
-issuer_cert_path = "issuer/cert/issuer_cert.pem"
-
-with open(issuer_cert_path, "rb") as f:
-    issuer_cert = x509.load_pem_x509_certificate(f.read())
+date_expires = VC["expirationDate"]
+if datetime.fromisoformat(date_expires) < datetime.now(timezone.utc):
+    print(" La VC risulta scaduta.")
+    exit(1) 
+print(" La VC non è scaduta")
 
 if not verify_signature_VC(VC):
     print(" Firma dell’università NON valida.")
@@ -90,7 +90,7 @@ try:
     t_ocsp = (time.perf_counter() - start) * 1000
     print(f" [TEMPO] Verifica firma OCSP: {t_ocsp:.2f} ms")
 except Exception as e:
-    print(" Errore verifica firma OCSP:", e)
+    print(" Errore verifica firma OCSP")
     exit(1)
 
 
@@ -113,9 +113,9 @@ vc_cn = next((x.split("=")[1] for x in vc_holder.split(",") if x.startswith("CN=
 cert_cn = holder_cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
 
 if vc_cn != cert_cn:
-    print("Mismatch sul CN tra VC e certificato.")
+    print(" Mismatch sul CN tra VC e certificato.")
     exit(1)
-print("CN del holder corrispondente.")
+print(" CN del holder corrispondente.")
 
 unsigned = {k: P_prot[k] for k in P_prot if k not in ("signature_holder", "Credenziale")}
 serialized = json.dumps(unsigned, separators=(",", ":"), sort_keys=True).encode()
@@ -153,11 +153,11 @@ for i, (attr_serialized, proof_entry) in enumerate(zip(m_i_list, pi_list)):
 # === Step 7: Timestamp e nonce ===
 now = datetime.now(timezone.utc)
 if not (datetime.fromisoformat(issued_at) <= now <= datetime.fromisoformat(expires_at)):
-    print("Timestamp non valido.")
+    print(" Timestamp non valido.")
     exit(1)
 
 if(VC["expirationDate"] < now.isoformat()):
-    print("Credenziale scaduta.")
+    print(" Credenziale scaduta.")
     exit(1)
 
 used_nonces = set()
@@ -166,11 +166,11 @@ if os.path.exists(USED_NONCES_PATH):
         used_nonces = set(line.strip() for line in f)
 
 if nonce in used_nonces:
-    print("Nonce già usato.")
+    print(" Nonce già usato.")
     exit(1)
 
 with open(USED_NONCES_PATH, "a") as f:
     f.write(nonce + "\n")
 
-print("Credenziale valida, Timestamp e nonce validi.")
+print(" Credenziale valida, Timestamp e nonce validi.")
 print("Presentazione accettata e verificata con successo.")

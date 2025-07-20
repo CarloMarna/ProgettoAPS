@@ -6,6 +6,10 @@ from datetime import datetime, timedelta, timezone
 import os
 
 def generate_cert_and_key(subject_dn: dict, cert_path: str, key_path: str):
+    if os.path.exists(cert_path) and os.path.exists(key_path):
+        print(f" Certificato già esistente per: {subject_dn['CN']}. Skipping.")
+        return
+    
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
     name = x509.Name([
