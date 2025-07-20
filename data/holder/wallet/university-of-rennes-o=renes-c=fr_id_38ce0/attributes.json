@@ -1,8 +1,0 @@
-[
-  "{\"CFU\":9,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"MAT101\",\"data\":\"2024-07-12\",\"docente\":\"Prof. De Luca\",\"lingua\":\"IT\",\"nome_esame\":\"Analisi Matematica I\",\"tipo_esame\":\"scritto\",\"voto\":\"26\"}",
-  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"FIS100\",\"data\":\"2024-06-18\",\"docente\":\"Prof. Fontana\",\"lingua\":\"IT\",\"nome_esame\":\"Fisica I\",\"tipo_esame\":\"orale\",\"voto\":\"27\"}",
-  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF150\",\"data\":\"2024-06-01\",\"docente\":\"Prof. Ferri\",\"lingua\":\"IT\",\"nome_esame\":\"Laboratorio di Programmazione\",\"tipo_esame\":\"progetto\",\"voto\":\"30L\"}",
-  "{\"CFU\":6,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"MAT205\",\"data\":\"2024-05-25\",\"docente\":\"Prof.ssa Gialli\",\"lingua\":\"IT\",\"nome_esame\":\"Calcolo Numerico\",\"tipo_esame\":\"misto\",\"voto\":\"28\"}",
-  "{\"CFU\":3,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"COM300\",\"data\":\"2024-05-05\",\"docente\":\"Prof. Grey\",\"lingua\":\"EN\",\"nome_esame\":\"Comunicazione Tecnico-Scientifica\",\"tipo_esame\":\"scritto\",\"voto\":\"29\"}",
-  "{\"CFU\":9,\"anno_accademico\":\"2023/2024\",\"cod_corso\":\"INF450\",\"data\":\"2024-03-25\",\"docente\":\"Prof. Nero\",\"lingua\":\"IT\",\"nome_esame\":\"Machine Learning\",\"tipo_esame\":\"orale\",\"voto\":\"30\"}"
-]
